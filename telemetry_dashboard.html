@@ -1,0 +1,897 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>F1TENTH Live Telemetry Dashboard • Sepang Circuit</title>
+  <script src="https://www.gstatic.com/antigravity/web/dev/tailwindcss.min.js"></script>
+  <style>
+    @keyframes pulse-fast {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.4; transform: scale(1.15); }
+    }
+    .live-dot {
+      animation: pulse-fast 1.4s infinite ease-in-out;
+    }
+    /* Custom glow effects */
+    .glow-cyan {
+      box-shadow: 0 0 15px rgba(6, 182, 212, 0.35);
+    }
+    .glow-amber {
+      box-shadow: 0 0 15px rgba(245, 158, 11, 0.35);
+    }
+    .glow-green {
+      box-shadow: 0 0 15px rgba(16, 185, 129, 0.35);
+    }
+  </style>
+</head>
+<body class="bg-slate-950 text-slate-100 font-sans antialiased min-h-screen p-3 md:p-6 select-none">
+
+  <!-- Header & Telemetry Bar -->
+  <header class="max-w-7xl mx-auto mb-5 bg-slate-900/90 border border-slate-800 rounded-2xl p-4 md:p-5 shadow-2xl backdrop-blur-md">
+    <div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+      <div>
+        <div class="flex items-center gap-3">
+          <span class="text-2xl md:text-3xl">🏎️</span>
+          <div>
+            <div class="flex items-center gap-2">
+              <h1 class="text-xl md:text-2xl font-black tracking-tight text-white uppercase">
+                F1TENTH Telemetry Cockpit
+              </h1>
+              <span id="conn-badge" class="px-2.5 py-0.5 rounded-full text-xs font-bold tracking-wide uppercase flex items-center gap-1.5 bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+                <span class="w-2 h-2 rounded-full bg-emerald-400 live-dot"></span>
+                <span id="conn-text">LIVE ROS 2</span>
+              </span>
+            </div>
+            <p class="text-xs md:text-sm text-slate-400 font-medium">
+              Sepang International Circuit • Group 3 (Nevir Nafiz Molla) • Follow-the-Gap Controller
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Live Controls -->
+      <div class="flex flex-wrap items-center gap-2 self-end md:self-center">
+        <button id="toggle-source-btn" onclick="toggleDataSource()" class="px-3 py-1.5 rounded-lg text-xs font-bold tracking-wider uppercase transition-all duration-200 border border-slate-700 bg-slate-800 hover:bg-slate-700 text-slate-300">
+          Source: <span id="source-name" class="text-cyan-400 font-extrabold">AUTO-DETECT</span>
+        </button>
+        <button id="reset-sim-btn" onclick="resetTelemetry()" class="px-3 py-1.5 rounded-lg text-xs font-bold tracking-wider uppercase transition-all duration-200 bg-cyan-600 hover:bg-cyan-500 text-white shadow-lg shadow-cyan-600/30">
+          Reset HUD
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Grid Layout -->
+  <main class="max-w-7xl mx-auto space-y-5">
+
+    <!-- Top Key Metrics Row -->
+    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 md:gap-4">
+      
+      <!-- Speed Card -->
+      <div class="bg-slate-900/80 border border-slate-800 rounded-xl p-3.5 relative overflow-hidden flex flex-col justify-between">
+        <div class="text-[11px] font-bold uppercase tracking-wider text-slate-400">Velocity</div>
+        <div class="my-1">
+          <div class="text-3xl md:text-4xl font-black text-cyan-400 tracking-tight flex items-baseline">
+            <span id="val-speed">0.0</span>
+            <span class="text-xs font-semibold text-slate-400 ml-1">m/s</span>
+          </div>
+          <div class="text-xs text-slate-400 font-medium">
+            <span id="val-speed-kmh" class="text-slate-200 font-bold">0.0</span> km/h
+          </div>
+        </div>
+        <!-- Speed Bar Gauge -->
+        <div class="w-full bg-slate-800 rounded-full h-1.5 overflow-hidden">
+          <div id="gauge-speed-bar" class="bg-gradient-to-r from-cyan-500 to-emerald-400 h-1.5 rounded-full transition-all duration-100" style="width: 0%"></div>
+        </div>
+      </div>
+
+      <!-- Steering Card -->
+      <div class="bg-slate-900/80 border border-slate-800 rounded-xl p-3.5 relative overflow-hidden flex flex-col justify-between">
+        <div class="text-[11px] font-bold uppercase tracking-wider text-slate-400">Steering Yaw</div>
+        <div class="my-1">
+          <div class="text-3xl md:text-4xl font-black text-amber-400 tracking-tight flex items-baseline">
+            <span id="val-steer">0.0</span>
+            <span class="text-xs font-semibold text-slate-400 ml-1">deg</span>
+          </div>
+          <div class="text-xs text-slate-400 font-medium">
+            <span id="val-steer-dir">CENTER</span>
+          </div>
+        </div>
+        <!-- Dual Steer Gauge -->
+        <div class="w-full bg-slate-800 rounded-full h-1.5 relative overflow-hidden">
+          <div id="gauge-steer-bar" class="bg-amber-400 h-1.5 rounded-full absolute top-0 transition-all duration-100" style="left: 50%; width: 0%;"></div>
+        </div>
+      </div>
+
+      <!-- Current Lap -->
+      <div class="bg-slate-900/80 border border-slate-800 rounded-xl p-3.5 relative overflow-hidden flex flex-col justify-between">
+        <div class="text-[11px] font-bold uppercase tracking-wider text-slate-400">Lap Progress</div>
+        <div class="my-1">
+          <div class="text-3xl md:text-4xl font-black text-white tracking-tight flex items-baseline">
+            <span id="val-lap">1</span>
+            <span class="text-xs font-semibold text-slate-400 ml-1">/ 10</span>
+          </div>
+          <div class="text-xs text-slate-400 font-medium">
+            <span id="val-distance" class="text-slate-200 font-bold">0.0</span> m driven
+          </div>
+        </div>
+        <div class="w-full bg-slate-800 rounded-full h-1.5 overflow-hidden">
+          <div id="gauge-lap-bar" class="bg-indigo-500 h-1.5 rounded-full transition-all duration-200" style="width: 10%"></div>
+        </div>
+      </div>
+
+      <!-- Current Lap Timer -->
+      <div class="bg-slate-900/80 border border-slate-800 rounded-xl p-3.5 relative overflow-hidden flex flex-col justify-between">
+        <div class="text-[11px] font-bold uppercase tracking-wider text-slate-400">Lap Timer</div>
+        <div class="my-1">
+          <div class="text-3xl md:text-4xl font-black text-emerald-400 tracking-tight font-mono">
+            <span id="val-timer">00.0</span><span class="text-xs font-sans text-slate-400 ml-0.5">s</span>
+          </div>
+          <div class="text-xs text-slate-400 font-medium">
+            Best: <span id="val-best-timer" class="text-amber-300 font-bold">N/A</span>
+          </div>
+        </div>
+        <div class="w-full bg-slate-800 rounded-full h-1.5 overflow-hidden">
+          <div id="gauge-time-bar" class="bg-emerald-500 h-1.5 rounded-full transition-all duration-100" style="width: 0%"></div>
+        </div>
+      </div>
+
+      <!-- Forward Lookahead Clearance -->
+      <div class="bg-slate-900/80 border border-slate-800 rounded-xl p-3.5 relative overflow-hidden flex flex-col justify-between">
+        <div class="text-[11px] font-bold uppercase tracking-wider text-slate-400">Nose Lookahead</div>
+        <div class="my-1">
+          <div class="text-3xl md:text-4xl font-black text-cyan-300 tracking-tight flex items-baseline">
+            <span id="val-nose">0.0</span>
+            <span class="text-xs font-semibold text-slate-400 ml-1">m</span>
+          </div>
+          <div class="text-xs font-medium">
+            <span id="val-brake-guard" class="text-emerald-400 font-semibold">CLEAR TRACK</span>
+          </div>
+        </div>
+        <div class="w-full bg-slate-800 rounded-full h-1.5 overflow-hidden">
+          <div id="gauge-nose-bar" class="bg-cyan-400 h-1.5 rounded-full transition-all duration-100" style="width: 50%"></div>
+        </div>
+      </div>
+
+      <!-- Collision Envelopes -->
+      <div class="bg-slate-900/80 border border-slate-800 rounded-xl p-3.5 relative overflow-hidden flex flex-col justify-between">
+        <div class="text-[11px] font-bold uppercase tracking-wider text-slate-400">Collisions</div>
+        <div class="my-1">
+          <div id="val-collisions" class="text-3xl md:text-4xl font-black text-emerald-400 tracking-tight">
+            0
+          </div>
+          <div class="text-xs text-slate-400 font-medium">
+            Status: <span id="val-status-txt" class="text-emerald-400 font-bold">100% CLEAN</span>
+          </div>
+        </div>
+        <div class="w-full bg-slate-800 rounded-full h-1.5 overflow-hidden">
+          <div id="gauge-collision-bar" class="bg-emerald-500 h-1.5 rounded-full" style="width: 100%"></div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Center Interactive Visualizers Row -->
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-5">
+
+      <!-- Left: Sepang Circuit Map with Live Vehicle Tracking (7 Cols) -->
+      <div class="lg:col-span-7 bg-slate-900/90 border border-slate-800 rounded-2xl p-4 md:p-5 shadow-xl flex flex-col justify-between">
+        <div class="flex items-center justify-between mb-2">
+          <div>
+            <h2 class="text-sm font-bold uppercase tracking-wider text-slate-200 flex items-center gap-2">
+              <span>📍</span> Sepang International Circuit Track Radar
+            </h2>
+            <p class="text-xs text-slate-400 font-medium">Real-time GPS / Odometry position & heading vector</p>
+          </div>
+          <div class="text-right">
+            <span class="text-xs text-slate-400 font-mono">X: <span id="pos-x" class="text-cyan-400">0.00</span> | Y: <span id="pos-y" class="text-cyan-400">0.00</span></span>
+          </div>
+        </div>
+
+        <!-- SVG Track Container -->
+        <div class="relative w-full aspect-[440/310] bg-slate-950/80 rounded-xl border border-slate-800/80 overflow-hidden flex items-center justify-center p-2">
+          <!-- Background Grid lines -->
+          <svg class="absolute inset-0 w-full h-full opacity-15 pointer-events-none" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <pattern id="grid-pattern" width="22" height="22" patternUnits="userSpaceOnUse">
+                <path d="M 22 0 L 0 0 0 22" fill="none" stroke="#38bdf8" stroke-width="0.7"/>
+              </pattern>
+            </defs>
+            <rect width="100%" height="100%" fill="url(#grid-pattern)" />
+          </svg>
+
+          <!-- Circuit SVG -->
+          <svg id="track-svg" viewBox="0 0 440 310" class="w-full h-full drop-shadow-lg">
+            <defs>
+              <linearGradient id="track-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#0284c7" />
+                <stop offset="50%" stop-color="#06b6d4" />
+                <stop offset="100%" stop-color="#10b981" />
+              </linearGradient>
+              <filter id="car-glow" x="-50%" y="-50%" width="200%" height="200%">
+                <feGaussianBlur stdDeviation="3.5" result="coloredBlur"/>
+                <feMerge>
+                  <feMergeNode in="coloredBlur"/>
+                  <feMergeNode in="SourceGraphic"/>
+                </feMerge>
+              </filter>
+            </defs>
+
+            <!-- Outer track buffer boundary -->
+            <path id="svg-track-outer" d="" fill="none" stroke="#1e293b" stroke-width="14" stroke-linecap="round" stroke-linejoin="round" />
+            <!-- Main asphalt racing line -->
+            <path id="svg-track-path" d="" fill="none" stroke="url(#track-grad)" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" />
+
+            <!-- Start / Finish Line Gantry Marker -->
+            <g id="start-finish-gantry" transform="translate(237.9, 164.9)">
+              <line x1="-1" y1="-8" x2="1" y2="8" stroke="#f59e0b" stroke-width="3.5" stroke-linecap="round"/>
+              <text x="5" y="-10" fill="#f59e0b" font-size="9" font-weight="900" font-family="monospace">START/FINISH</text>
+            </g>
+
+            <!-- Driven Breadcrumbs trail -->
+            <polyline id="svg-trail" points="" fill="none" stroke="#38bdf8" stroke-width="1.8" stroke-dasharray="3,3" opacity="0.6"/>
+
+            <!-- Real-time Vehicle Marker -->
+            <g id="svg-car-marker" transform="translate(237.9, 164.9) rotate(0)">
+              <!-- Outer pulse glow -->
+              <circle r="9" fill="#ef4444" opacity="0.35" class="live-dot" />
+              <!-- Car body -->
+              <circle r="4.5" fill="#f43f5e" stroke="#ffffff" stroke-width="1.5" filter="url(#car-glow)"/>
+              <!-- Heading arrow -->
+              <line x1="0" y1="0" x2="11" y2="0" stroke="#ffffff" stroke-width="2" stroke-linecap="round"/>
+              <!-- Target apex beam -->
+              <line id="svg-target-beam" x1="0" y1="0" x2="18" y2="0" stroke="#facc15" stroke-width="1.5" stroke-dasharray="2,2"/>
+            </g>
+          </svg>
+
+          <!-- On-screen circuit badge -->
+          <div class="absolute bottom-2 left-3 text-[11px] text-slate-400 font-mono bg-slate-900/80 px-2 py-1 rounded border border-slate-800">
+            LENGTH: 471m • 15 TURNS
+          </div>
+        </div>
+      </div>
+
+      <!-- Right: LiDAR Radar & G-Force Circle (5 Cols) -->
+      <div class="lg:col-span-5 space-y-5 flex flex-col justify-between">
+        
+        <!-- LiDAR Polar Scope -->
+        <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-4 shadow-xl flex-1 flex flex-col justify-between">
+          <div class="flex items-center justify-between mb-2">
+            <h3 class="text-sm font-bold uppercase tracking-wider text-slate-200 flex items-center gap-2">
+              <span>📡</span> 2D LiDAR Polar Radar
+            </h3>
+            <span class="text-xs text-cyan-400 font-mono">142° FOV • 1080 BEAMS</span>
+          </div>
+          <div class="relative w-full aspect-[2/1] bg-slate-950 rounded-xl border border-slate-800 flex items-center justify-center overflow-hidden">
+            <canvas id="lidar-canvas" width="360" height="180" class="w-full h-full"></canvas>
+            <div class="absolute top-2 left-2 text-[10px] text-slate-500 font-mono">
+              RANGE: 18m
+            </div>
+            <div class="absolute top-2 right-2 text-[10px] text-amber-400 font-mono font-bold" id="lidar-target-label">
+              APEX: CENTER
+            </div>
+          </div>
+        </div>
+
+        <!-- G-Force Friction Circle & Longitudinal Slew -->
+        <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-4 shadow-xl flex-1 flex flex-col justify-between">
+          <div class="flex items-center justify-between mb-2">
+            <h3 class="text-sm font-bold uppercase tracking-wider text-slate-200 flex items-center gap-2">
+              <span>🎯</span> Friction Circle (G-Meter)
+            </h3>
+            <div class="text-xs font-mono text-slate-300">
+              G-Lat: <span id="val-glat" class="text-amber-400 font-bold">0.00 G</span>
+            </div>
+          </div>
+          <div class="grid grid-cols-2 gap-3 items-center">
+            <!-- G-Circle Canvas -->
+            <div class="aspect-square bg-slate-950 rounded-xl border border-slate-800 flex items-center justify-center p-1">
+              <canvas id="gforce-canvas" width="140" height="140" class="w-full h-full"></canvas>
+            </div>
+            <!-- Throttle & Braking Slew Bars -->
+            <div class="space-y-3 font-mono text-xs">
+              <div>
+                <div class="flex justify-between text-[11px] text-slate-400 mb-1">
+                  <span>THROTTLE</span>
+                  <span id="txt-throttle" class="text-cyan-400 font-bold">0%</span>
+                </div>
+                <div class="w-full bg-slate-800 rounded-full h-2 overflow-hidden">
+                  <div id="bar-throttle" class="bg-cyan-500 h-2 rounded-full transition-all duration-75" style="width: 0%"></div>
+                </div>
+              </div>
+              <div>
+                <div class="flex justify-between text-[11px] text-slate-400 mb-1">
+                  <span>BRAKING DECEL</span>
+                  <span id="txt-brake" class="text-rose-400 font-bold">0.0 m/s²</span>
+                </div>
+                <div class="w-full bg-slate-800 rounded-full h-2 overflow-hidden">
+                  <div id="bar-brake" class="bg-rose-500 h-2 rounded-full transition-all duration-75" style="width: 0%"></div>
+                </div>
+              </div>
+              <div class="pt-1 text-[11px] text-slate-400">
+                TRACTION LIMIT: <span class="text-emerald-400 font-bold">1.4 G</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+
+    <!-- Bottom Row: Real-time Strip Chart & 10-Lap Leaderboard Table -->
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-5">
+      
+      <!-- Strip Chart (7 Cols) -->
+      <div class="lg:col-span-7 bg-slate-900/90 border border-slate-800 rounded-2xl p-4 md:p-5 shadow-xl">
+        <div class="flex items-center justify-between mb-3">
+          <h3 class="text-sm font-bold uppercase tracking-wider text-slate-200 flex items-center gap-2">
+            <span>📈</span> Real-Time Telemetry Strip Chart (10s Window)
+          </h3>
+          <div class="flex items-center gap-4 text-xs font-mono">
+            <span class="flex items-center gap-1.5 text-cyan-400"><span class="w-2.5 h-2.5 rounded-full bg-cyan-400 inline-block"></span> Speed (m/s)</span>
+            <span class="flex items-center gap-1.5 text-amber-400"><span class="w-2.5 h-2.5 rounded-full bg-amber-400 inline-block"></span> Steer (×10 deg)</span>
+          </div>
+        </div>
+        <div class="w-full h-44 bg-slate-950 rounded-xl border border-slate-800 p-1">
+          <canvas id="chart-canvas" width="650" height="170" class="w-full h-full"></canvas>
+        </div>
+      </div>
+
+      <!-- 10-Lap History Scoreboard (5 Cols) -->
+      <div class="lg:col-span-5 bg-slate-900/90 border border-slate-800 rounded-2xl p-4 md:p-5 shadow-xl flex flex-col justify-between">
+        <div class="flex items-center justify-between mb-3">
+          <h3 class="text-sm font-bold uppercase tracking-wider text-slate-200 flex items-center gap-2">
+            <span>🏁</span> 10-Lap Timing Record
+          </h3>
+          <span class="text-xs text-amber-400 font-bold uppercase">TARGET: 10/10 CLEAN</span>
+        </div>
+
+        <div class="overflow-y-auto max-h-44 border border-slate-800 rounded-xl">
+          <table class="w-full text-left text-xs font-mono">
+            <thead class="bg-slate-950 text-slate-400 uppercase text-[10px] tracking-wider border-b border-slate-800">
+              <tr>
+                <th class="py-2 px-3">Lap</th>
+                <th class="py-2 px-3">Time</th>
+                <th class="py-2 px-3">Avg Speed</th>
+                <th class="py-2 px-3 text-right">Status</th>
+              </tr>
+            </thead>
+            <tbody id="lap-table-body" class="divide-y divide-slate-800/60 text-slate-300">
+              <tr>
+                <td class="py-2 px-3 text-cyan-400 font-bold">Lap 1</td>
+                <td class="py-2 px-3 font-semibold text-slate-400">In Progress...</td>
+                <td class="py-2 px-3 text-slate-500">-</td>
+                <td class="py-2 px-3 text-right"><span class="px-1.5 py-0.5 rounded text-[10px] bg-slate-800 text-slate-300">RUNNING</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+
+  </main>
+
+  <!-- Telemetry Logic & Stream Engine -->
+  <script>
+    // --------------------------------------------------------------------------
+    // 1. Sepang Circuit Geometry & Waypoints
+    // --------------------------------------------------------------------------
+    const trackBounds = {
+      cx: -5.62556,
+      cy: 1.55718,
+      scale: 3.1766,
+      svgWidth: 440,
+      svgHeight: 310
+    };
+
+    // Pre-sampled authentic Sepang circuit path coordinates
+    const sampledSepangCoords = [
+      [0.05, 0.45], [-3.72, 0.01], [-7.5, -0.44], [-11.27, -0.88], [-15.04, -1.33],
+      [-18.82, -1.77], [-22.59, -2.22], [-26.36, -2.66], [-30.13, -3.11], [-33.91, -3.55],
+      [-37.68, -4.0], [-41.45, -4.44], [-45.23, -4.89], [-48.97, -5.62], [-51.81, -8.19],
+      [-53.79, -11.95], [-54.89, -16.03], [-55.33, -20.2], [-54.87, -24.4], [-53.15, -28.18],
+      [-50.29, -31.33], [-46.61, -33.62], [-42.44, -34.82], [-38.16, -34.78], [-33.98, -33.67],
+      [-30.08, -31.52], [-26.85, -28.32], [-24.81, -24.34], [-24.11, -20.08], [-24.58, -15.84],
+      [-26.03, -11.83], [-28.18, -8.32], [-30.68, -5.11], [-32.48, -1.25], [-33.02, 2.97],
+      [-32.19, 7.15], [-29.98, 10.88], [-26.68, 13.88], [-22.68, 15.93], [-18.36, 16.92],
+      [-13.92, 16.78], [-9.57, 15.65], [-5.45, 13.62], [-1.75, 10.82], [1.32, 7.37],
+      [3.68, 3.42], [5.25, -0.84], [6.02, -5.25], [6.04, -9.69], [5.37, -14.07],
+      [4.07, -18.3], [2.19, -22.28], [-0.17, -25.92], [-2.9, -29.15], [-5.9, -31.89],
+      [-9.08, -34.09], [-12.44, -35.73], [-15.99, -36.79], [-19.68, -37.23], [-23.41, -37.03],
+      [-27.09, -36.19], [-30.66, -34.72], [-34.04, -32.65], [-37.16, -29.98], [-39.92, -26.78],
+      [-42.23, -23.1], [-43.98, -19.03], [-45.05, -14.67], [-45.31, -10.15], [-44.64, -5.63],
+      [-42.98, -1.29], [-40.35, 2.7], [-36.87, 6.13], [-32.69, 8.87], [-27.97, 10.82],
+      [-22.86, 11.95], [-17.51, 12.24], [-12.06, 11.75], [-6.65, 10.53], [-1.43, 8.64],
+      [3.48, 6.14], [7.95, 3.12], [11.85, -0.34], [15.08, -4.2], [17.56, -8.38],
+      [19.24, -12.78], [20.08, -17.31], [20.07, -21.87], [19.23, -26.35], [17.59, -30.66],
+      [15.2, -34.69], [12.12, -38.35], [8.44, -41.53], [4.24, -44.13], [-0.38, -46.04],
+      [-5.31, -47.16], [-10.42, -47.4], [-15.58, -46.72], [-20.65, -45.14], [-25.48, -42.7],
+      [-29.93, -39.46], [-33.87, -35.5], [-37.17, -30.91], [-39.73, -25.81], [-41.44, -20.33],
+      [-42.21, -14.62], [-41.97, -8.84], [-40.7, -3.15], [-38.43, 2.29], [-35.21, 7.37],
+      [-31.14, 11.95], [-26.31, 15.91], [-20.84, 19.14], [-14.86, 21.52], [-8.5, 22.97],
+      [-1.9, 23.44], [4.78, 22.88], [11.38, 21.3], [17.75, 18.73], [23.77, 15.23],
+      [29.31, 10.88], [34.25, 5.76], [38.48, -0.02], [41.87, -6.37], [44.33, -13.16],
+      [45.77, -20.24], [46.12, -27.46], [45.35, -34.65], [43.46, -41.64], [40.48, -48.24],
+      [36.47, -54.29], [31.5, -59.63], [25.68, -64.12], [19.14, -67.62], [12.02, -70.02],
+      [4.49, -71.21], [-3.27, -71.12], [-10.98, -69.73], [-18.45, -67.06], [-25.5, -63.15]
+    ];
+
+    function mapWorldToSvg(x, y) {
+      const scx = trackBounds.svgWidth / 2;
+      const scy = trackBounds.svgHeight / 2;
+      return {
+        x: scx + (x - trackBounds.cx) * trackBounds.scale,
+        y: scy - (y - trackBounds.cy) * trackBounds.scale
+      };
+    }
+
+    // Render static circuit track SVG path
+    function initTrackSvg() {
+      let d = "";
+      sampledSepangCoords.forEach((pt, i) => {
+        const svgPt = mapWorldToSvg(pt[0], pt[1]);
+        d += (i === 0 ? "M " : " L ") + svgPt.x.toFixed(1) + "," + svgPt.y.toFixed(1);
+      });
+      d += " Z";
+      document.getElementById("svg-track-path").setAttribute("d", d);
+      document.getElementById("svg-track-outer").setAttribute("d", d);
+    }
+    initTrackSvg();
+
+    // --------------------------------------------------------------------------
+    // 2. Telemetry State Management & Dual-Source Connector
+    // --------------------------------------------------------------------------
+    let telemetryMode = "AUTO"; // "AUTO", "LIVE", "DEMO"
+    let isLiveActive = false;
+    let pollInterval = null;
+    let trailPoints = [];
+    const MAX_TRAIL_LENGTH = 75;
+
+    // Rolling strip chart data (10 seconds @ 10Hz = 100 points)
+    const chartHistory = {
+      speed: new Array(100).fill(0),
+      steer: new Array(100).fill(0)
+    };
+
+    let simState = {
+      lap: 1,
+      target_laps: 10,
+      lap_time: 0.0,
+      best_lap_time: null,
+      best_lap_num: 0,
+      speed: 0.0,
+      speed_kmh: 0.0,
+      steer_deg: 0.0,
+      steer_rad: 0.0,
+      x: 0.0,
+      y: 0.0,
+      theta: -3.057,
+      total_distance: 0.0,
+      collisions: 0,
+      nose_dist: 12.0,
+      g_lat: 0.0,
+      lidar: new Array(36).fill(8.5),
+      history: []
+    };
+
+    // Synthetic high-fidelity simulation engine for when ROS 2 bridge is offline
+    let demoWaypointIdx = 0;
+    let demoStartTime = Date.now();
+    let demoLapStartTime = Date.now();
+    let demoLap = 1;
+    let demoBestLap = null;
+    let demoHistory = [];
+
+    function runDemoPhysicsStep() {
+      if (isLiveActive) return;
+
+      demoWaypointIdx = (demoWaypointIdx + 1) % sampledSepangCoords.length;
+      const pt = sampledSepangCoords[demoWaypointIdx];
+      const nextPt = sampledSepangCoords[(demoWaypointIdx + 1) % sampledSepangCoords.length];
+      
+      const dx = nextPt[0] - pt[0];
+      const dy = nextPt[1] - pt[1];
+      const heading = Math.atan2(dy, dx);
+      
+      // Calculate dynamic speed based on curvature
+      const curvature = Math.abs(dx * 0.1 - dy * 0.1);
+      let targetSpeed = 12.5;
+      if (curvature > 0.8) targetSpeed = 5.2;
+      else if (curvature > 0.4) targetSpeed = 8.5;
+
+      const steerDeg = Math.sin(demoWaypointIdx * 0.15) * 14.5;
+      const speed = targetSpeed + Math.sin(demoWaypointIdx * 0.2) * 1.2;
+      const now = Date.now();
+      const lapTime = (now - demoLapStartTime) / 1000;
+
+      // Simulated lap wrap
+      if (demoWaypointIdx === 0 && lapTime > 15.0) {
+        if (!demoBestLap || lapTime < demoBestLap) demoBestLap = lapTime;
+        demoHistory.push({
+          lap: demoLap,
+          time: parseFloat(lapTime.toFixed(2)),
+          collisions: 0,
+          is_best: (lapTime === demoBestLap)
+        });
+        demoLap++;
+        demoLapStartTime = Date.now();
+      }
+
+      // Generate realistic forward LiDAR scan
+      const lidarScan = [];
+      for (let i = 0; i < 36; i++) {
+        const ang = (i / 35.0 - 0.5) * 2.47;
+        const d = Math.max(1.1, Math.min(18.0, 7.5 + Math.cos(ang * 2.5) * 4.0 + (Math.random() - 0.5) * 0.4));
+        lidarScan.push(parseFloat(d.toFixed(2)));
+      }
+
+      simState = {
+        lap: demoLap,
+        target_laps: 10,
+        lap_time: parseFloat(lapTime.toFixed(2)),
+        best_lap_time: demoBestLap ? parseFloat(demoBestLap.toFixed(2)) : null,
+        best_lap_num: 1,
+        speed: parseFloat(speed.toFixed(2)),
+        speed_kmh: parseFloat((speed * 3.6).toFixed(1)),
+        steer_deg: parseFloat(steerDeg.toFixed(1)),
+        steer_rad: parseFloat((steerDeg * Math.PI / 180).toFixed(3)),
+        x: parseFloat(pt[0].toFixed(2)),
+        y: parseFloat(pt[1].toFixed(2)),
+        theta: parseFloat(heading.toFixed(2)),
+        total_distance: parseFloat((demoWaypointIdx * 3.8).toFixed(1)),
+        collisions: 0,
+        nose_dist: parseFloat((8.5 + Math.random() * 3.0).toFixed(2)),
+        g_lat: parseFloat(((speed ** 2 * Math.tan(steerDeg * Math.PI / 180)) / (0.33 * 9.81)).toFixed(2)),
+        lidar: lidarScan,
+        history: demoHistory
+      };
+
+      updateUI(simState);
+    }
+
+    // --------------------------------------------------------------------------
+    // 3. Live ROS 2 Bridge Polling (Port 8088)
+    // --------------------------------------------------------------------------
+    async function pollLiveTelemetry() {
+      try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 650);
+
+        const res = await fetch("http://127.0.0.1:8088/telemetry", {
+          signal: controller.signal
+        });
+        clearTimeout(timeoutId);
+
+        if (res.ok) {
+          const data = await res.json();
+          isLiveActive = true;
+          document.getElementById("conn-badge").className = "px-2.5 py-0.5 rounded-full text-xs font-bold tracking-wide uppercase flex items-center gap-1.5 bg-emerald-500/20 text-emerald-400 border border-emerald-500/30";
+          document.getElementById("conn-text").innerText = "LIVE ROS 2 (SEPANG)";
+          updateUI(data);
+          return;
+        }
+      } catch (err) {
+        // Fallback to demo mode if live server is not active
+        if (isLiveActive) {
+          isLiveActive = false;
+        }
+        document.getElementById("conn-badge").className = "px-2.5 py-0.5 rounded-full text-xs font-bold tracking-wide uppercase flex items-center gap-1.5 bg-amber-500/20 text-amber-400 border border-amber-500/30";
+        document.getElementById("conn-text").innerText = "SIMULATOR PLAYBACK";
+        runDemoPhysicsStep();
+      }
+    }
+
+    // --------------------------------------------------------------------------
+    // 4. UI Dashboard Updating
+    // --------------------------------------------------------------------------
+    function updateUI(data) {
+      // 1. Text values
+      document.getElementById("val-speed").innerText = data.speed.toFixed(1);
+      document.getElementById("val-speed-kmh").innerText = (data.speed * 3.6).toFixed(1);
+      document.getElementById("val-steer").innerText = Math.abs(data.steer_deg).toFixed(1);
+      document.getElementById("val-steer-dir").innerText = data.steer_deg > 1.2 ? "RIGHT TURN" : (data.steer_deg < -1.2 ? "LEFT TURN" : "CENTER");
+      document.getElementById("val-lap").innerText = data.lap;
+      document.getElementById("val-distance").innerText = data.total_distance.toFixed(1);
+      document.getElementById("val-timer").innerText = data.lap_time.toFixed(1);
+      document.getElementById("val-best-timer").innerText = data.best_lap_time ? data.best_lap_time.toFixed(2) + "s" : "N/A";
+      document.getElementById("val-nose").innerText = (data.nose_dist || 8.0).toFixed(1);
+      document.getElementById("pos-x").innerText = data.x.toFixed(2);
+      document.getElementById("pos-y").innerText = data.y.toFixed(2);
+      document.getElementById("val-collisions").innerText = data.collisions;
+      document.getElementById("val-glat").innerText = (data.g_lat || 0.0).toFixed(2) + " G";
+
+      // Collision status
+      if (data.collisions === 0) {
+        document.getElementById("val-status-txt").className = "text-emerald-400 font-bold";
+        document.getElementById("val-status-txt").innerText = "100% CLEAN";
+      } else {
+        document.getElementById("val-status-txt").className = "text-rose-400 font-bold";
+        document.getElementById("val-status-txt").innerText = data.collisions + " CONTACTS";
+      }
+
+      // 2. Bar Gauges
+      const speedPct = Math.min(100, (data.speed / 18.0) * 100);
+      document.getElementById("gauge-speed-bar").style.width = speedPct + "%";
+      
+      const steerPct = (Math.abs(data.steer_deg) / 24.0) * 50;
+      const steerBar = document.getElementById("gauge-steer-bar");
+      if (data.steer_deg >= 0) {
+        steerBar.style.left = "50%";
+        steerBar.style.width = steerPct + "%";
+      } else {
+        steerBar.style.left = (50 - steerPct) + "%";
+        steerBar.style.width = steerPct + "%";
+      }
+
+      const lapPct = (data.lap / (data.target_laps || 10)) * 100;
+      document.getElementById("gauge-lap-bar").style.width = lapPct + "%";
+
+      const nosePct = Math.min(100, ((data.nose_dist || 5.0) / 18.0) * 100);
+      document.getElementById("gauge-nose-bar").style.width = nosePct + "%";
+
+      const throttlePct = Math.min(100, (data.speed / 18.0) * 100);
+      document.getElementById("bar-throttle").style.width = throttlePct + "%";
+      document.getElementById("txt-throttle").innerText = throttlePct.toFixed(0) + "%";
+
+      const brakeVal = data.nose_dist < 4.0 ? Math.min(12.0, (4.0 - data.nose_dist) * 3.5) : 0.0;
+      document.getElementById("bar-brake").style.width = Math.min(100, (brakeVal / 12.0) * 100) + "%";
+      document.getElementById("txt-brake").innerText = brakeVal.toFixed(1) + " m/s²";
+
+      // 3. Sepang Track SVG Car Marker & Heading
+      const svgPos = mapWorldToSvg(data.x, data.y);
+      const carGroup = document.getElementById("svg-car-marker");
+      if (carGroup) {
+        // SVG rotate in degrees: -theta in degrees because SVG y is inverted
+        const deg = (-data.theta * 180 / Math.PI);
+        carGroup.setAttribute("transform", `translate(${svgPos.x.toFixed(1)}, ${svgPos.y.toFixed(1)}) rotate(${deg.toFixed(1)})`);
+      }
+
+      // Breadcrumb trail
+      trailPoints.push(`${svgPos.x.toFixed(1)},${svgPos.y.toFixed(1)}`);
+      if (trailPoints.length > MAX_TRAIL_LENGTH) trailPoints.shift();
+      document.getElementById("svg-trail").setAttribute("points", trailPoints.join(" "));
+
+      // 4. Update Canvases
+      renderLiDAR(data.lidar || []);
+      renderGForce(data.g_lat || 0.0, (data.speed > 8 ? 0.35 : -0.2));
+      updateChart(data.speed, data.steer_deg);
+
+      // 5. Leaderboard Table
+      updateLeaderboard(data.history || [], data.lap, data.lap_time);
+    }
+
+    // --------------------------------------------------------------------------
+    // 5. Canvas Visualizers (LiDAR Scope, G-Force, Strip Chart)
+    // --------------------------------------------------------------------------
+    const lidarCanvas = document.getElementById("lidar-canvas");
+    const lidarCtx = lidarCanvas.getContext("2d");
+
+    function renderLiDAR(ranges) {
+      const w = lidarCanvas.width;
+      const h = lidarCanvas.height;
+      lidarCtx.clearRect(0, 0, w, h);
+
+      const ox = w / 2;
+      const oy = h - 10;
+      const maxR = h - 20;
+
+      // Draw radar background range arcs
+      lidarCtx.strokeStyle = "#1e293b";
+      lidarCtx.lineWidth = 1;
+      for (let r = 1; r <= 3; r++) {
+        lidarCtx.beginPath();
+        lidarCtx.arc(ox, oy, (maxR / 3) * r, Math.PI, 0);
+        lidarCtx.stroke();
+      }
+
+      // Draw radar sweep beams
+      if (!ranges || ranges.length === 0) return;
+
+      lidarCtx.beginPath();
+      lidarCtx.moveTo(ox, oy);
+
+      const numBeams = ranges.length;
+      for (let i = 0; i < numBeams; i++) {
+        // Forward 142 deg cone (+/- 71 deg)
+        const angle = -Math.PI / 2 + ((i / (numBeams - 1)) - 0.5) * (142 * Math.PI / 180);
+        const dist = Math.min(18.0, Math.max(0.2, ranges[i]));
+        const beamR = (dist / 18.0) * maxR;
+        const bx = ox + Math.sin(angle) * beamR;
+        const by = oy - Math.cos(angle) * beamR;
+
+        if (i === 0) lidarCtx.moveTo(bx, by);
+        else lidarCtx.lineTo(bx, by);
+      }
+
+      // LiDAR perimeter polygon
+      lidarCtx.strokeStyle = "#06b6d4";
+      lidarCtx.lineWidth = 2;
+      lidarCtx.stroke();
+
+      lidarCtx.lineTo(ox, oy);
+      lidarCtx.fillStyle = "rgba(6, 182, 212, 0.12)";
+      lidarCtx.fill();
+
+      // Origin sensor dot
+      lidarCtx.beginPath();
+      lidarCtx.arc(ox, oy, 4, 0, Math.PI * 2);
+      lidarCtx.fillStyle = "#f43f5e";
+      lidarCtx.fill();
+    }
+
+    const gCanvas = document.getElementById("gforce-canvas");
+    const gCtx = gCanvas.getContext("2d");
+
+    function renderGForce(gLat, gLon) {
+      const w = gCanvas.width;
+      const h = gCanvas.height;
+      gCtx.clearRect(0, 0, w, h);
+
+      const cx = w / 2;
+      const cy = h / 2;
+      const maxG = 1.6;
+      const maxRadius = w / 2 - 10;
+
+      // Outer limit circle (1.4 G)
+      gCtx.strokeStyle = "#334155";
+      gCtx.lineWidth = 1.5;
+      gCtx.beginPath();
+      gCtx.arc(cx, cy, (1.4 / maxG) * maxRadius, 0, Math.PI * 2);
+      gCtx.stroke();
+
+      // 0.8 G circle
+      gCtx.strokeStyle = "#1e293b";
+      gCtx.beginPath();
+      gCtx.arc(cx, cy, (0.8 / maxG) * maxRadius, 0, Math.PI * 2);
+      gCtx.stroke();
+
+      // Crosshairs
+      gCtx.beginPath();
+      gCtx.moveTo(cx, 10); gCtx.lineTo(cx, h - 10);
+      gCtx.moveTo(10, cy); gCtx.lineTo(w - 10, cy);
+      gCtx.stroke();
+
+      // Current G point
+      const px = cx + (gLat / maxG) * maxRadius;
+      const py = cy - (gLon / maxG) * maxRadius;
+
+      gCtx.beginPath();
+      gCtx.arc(px, py, 5, 0, Math.PI * 2);
+      gCtx.fillStyle = "#f59e0b";
+      gCtx.fill();
+      gCtx.strokeStyle = "#ffffff";
+      gCtx.lineWidth = 1.5;
+      gCtx.stroke();
+    }
+
+    const chartCanvas = document.getElementById("chart-canvas");
+    const chartCtx = chartCanvas.getContext("2d");
+
+    function updateChart(speed, steer) {
+      chartHistory.speed.push(speed);
+      chartHistory.speed.shift();
+      chartHistory.steer.push(steer);
+      chartHistory.steer.shift();
+
+      const w = chartCanvas.width;
+      const h = chartCanvas.height;
+      chartCtx.clearRect(0, 0, w, h);
+
+      // Grid lines
+      chartCtx.strokeStyle = "#1e293b";
+      chartCtx.lineWidth = 1;
+      for (let y = 30; y < h; y += 35) {
+        chartCtx.beginPath();
+        chartCtx.moveTo(0, y); chartCtx.lineTo(w, y);
+        chartCtx.stroke();
+      }
+
+      // Draw Speed Line (Cyan)
+      chartCtx.beginPath();
+      chartCtx.strokeStyle = "#06b6d4";
+      chartCtx.lineWidth = 2.2;
+      chartHistory.speed.forEach((v, i) => {
+        const x = (i / (chartHistory.speed.length - 1)) * w;
+        const y = h - 20 - (v / 18.0) * (h - 40);
+        if (i === 0) chartCtx.moveTo(x, y);
+        else chartCtx.lineTo(x, y);
+      });
+      chartCtx.stroke();
+
+      // Draw Steer Line (Amber)
+      chartCtx.beginPath();
+      chartCtx.strokeStyle = "#f59e0b";
+      chartCtx.lineWidth = 1.8;
+      chartHistory.steer.forEach((st, i) => {
+        const x = (i / (chartHistory.steer.length - 1)) * w;
+        const norm = (st + 24.0) / 48.0; // [-24, 24] deg -> [0, 1]
+        const y = h - 20 - norm * (h - 40);
+        if (i === 0) chartCtx.moveTo(x, y);
+        else chartCtx.lineTo(x, y);
+      });
+      chartCtx.stroke();
+    }
+
+    function updateLeaderboard(history, currLap, currTime) {
+      const tbody = document.getElementById("lap-table-body");
+      let html = "";
+
+      for (let i = 1; i <= 10; i++) {
+        if (i <= history.length) {
+          const rec = history[i - 1];
+          const isBest = rec.is_best;
+          html += `
+            <tr class="${isBest ? 'bg-amber-500/10' : ''}">
+              <td class="py-2 px-3 font-bold ${isBest ? 'text-amber-400' : 'text-slate-300'}">Lap ${i}</td>
+              <td class="py-2 px-3 font-semibold ${isBest ? 'text-amber-300 font-bold' : 'text-slate-200'}">${rec.time.toFixed(2)}s</td>
+              <td class="py-2 px-3 text-slate-400">${(471.0 / rec.time).toFixed(2)} m/s</td>
+              <td class="py-2 px-3 text-right">
+                ${isBest 
+                  ? '<span class="px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30">⭐ FASTEST</span>'
+                  : '<span class="px-1.5 py-0.5 rounded text-[10px] bg-emerald-500/20 text-emerald-400">CLEAN</span>'
+                }
+              </td>
+            </tr>
+          `;
+        } else if (i === currLap) {
+          html += `
+            <tr class="bg-cyan-500/10">
+              <td class="py-2 px-3 text-cyan-400 font-bold">Lap ${i}</td>
+              <td class="py-2 px-3 font-semibold text-cyan-300 font-mono">${currTime.toFixed(1)}s</td>
+              <td class="py-2 px-3 text-slate-400">Running</td>
+              <td class="py-2 px-3 text-right"><span class="px-1.5 py-0.5 rounded text-[10px] font-bold bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">ACTIVE</span></td>
+            </tr>
+          `;
+        } else {
+          html += `
+            <tr class="opacity-40">
+              <td class="py-2 px-3 text-slate-500">Lap ${i}</td>
+              <td class="py-2 px-3 text-slate-600">-</td>
+              <td class="py-2 px-3 text-slate-600">-</td>
+              <td class="py-2 px-3 text-right"><span class="text-[10px] text-slate-600">QUEUED</span></td>
+            </tr>
+          `;
+        }
+      }
+      tbody.innerHTML = html;
+    }
+
+    function toggleDataSource() {
+      if (telemetryMode === "AUTO") {
+        telemetryMode = "DEMO";
+        isLiveActive = false;
+        document.getElementById("source-name").innerText = "DEMO SIM";
+      } else if (telemetryMode === "DEMO") {
+        telemetryMode = "LIVE";
+        document.getElementById("source-name").innerText = "FORCE ROS 2";
+      } else {
+        telemetryMode = "AUTO";
+        document.getElementById("source-name").innerText = "AUTO-DETECT";
+      }
+    }
+
+    function resetTelemetry() {
+      trailPoints = [];
+      demoWaypointIdx = 0;
+      demoLap = 1;
+      demoLapStartTime = Date.now();
+      demoHistory = [];
+    }
+
+    // --------------------------------------------------------------------------
+    // 6. Polling Loop Initialization (10 Hz)
+    // --------------------------------------------------------------------------
+    setInterval(() => {
+      if (telemetryMode === "DEMO") {
+        runDemoPhysicsStep();
+      } else {
+        pollLiveTelemetry();
+      }
+    }, 100);
+
+  </script>
+</body>
+</html>
