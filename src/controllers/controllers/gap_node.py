@@ -4,7 +4,7 @@
 Follow-the-Gap Reactive Autonomous Racing Controller
 Course: Autonomous Vehicles
 Group: 3 | Track: Sepang International Circuit
-Driver: Nevir Nafiz Molla
+Driver: NEBIR NAFIZ MOLLAH
 Target: 10 Consecutive Clean Laps (Zero Collisions) & Fastest Lap Time
 ==============================================================================
 
@@ -194,7 +194,7 @@ class ReactiveFollowGap(Node):
         print("\033[2J\033[H", end="")  # Clear screen and move to top
         print("=" * 72)
         print("🏎️   F1TENTH AUTONOMOUS RACING SYSTEM - LIVE CONTROLLER")
-        print("👨‍💻  Driver      : Nevir Nafiz Molla | Group 3")
+        print("👨‍💻  Driver      : NEBIR NAFIZ MOLLAH | Group 3")
         print("📍  Circuit     : Sepang International Circuit")
         print(f"🎯  Target Goal : {self.target_laps} Consecutive Laps (0 Collisions) & Fastest Lap")
         print("⚡  Controller  : High-Speed Disparity-Extender FTG (18.0 m/s Top Speed)")
@@ -631,7 +631,7 @@ class ReactiveFollowGap(Node):
         print("🎉 10 CONSECUTIVE LAPS COMPLETED WITH ZERO COLLISIONS! 🎉")
         print("=" * 72)
         print("📍 Circuit        : Sepang International Circuit")
-        print("👨‍💻 Driver         : Nevir Nafiz Molla (Group 3)")
+        print("👨‍💻 Driver         : NEBIR NAFIZ MOLLAH (Group 3)")
         print(f"⚡ Fastest Lap    : {self.best_lap_time:.2f} s (Lap {self.best_lap_num})")
         print(f"⏱️  Average Lap    : {avg_time:.2f} s")
         print(f"🏁 Total Sim Time : {total_time:.2f} s")

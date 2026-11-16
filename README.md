@@ -6,7 +6,7 @@
 [![Validation](https://img.shields.io/badge/VALIDATION-10_COLLISION--FREE_LAPS-brightgreen.svg?style=flat-square)]()
 [![License](https://img.shields.io/badge/LICENSE-MIT-green.svg?style=flat-square)](LICENSE)
 
-- **Author:** Nevir Nafiz Molla
+- **Author:** NEBIR NAFIZ MOLLAH
 - **Email:** [nafiznebir045@gmail.com](mailto:nafiznebir045@gmail.com)
 - **Course:** Autonomous Vehicles — II PAO 2026
 - **Assessment:** First Midterm Project (Part 1) — Reactive Controllers Competition
@@ -369,7 +369,6 @@ python3 benchmark_lap.py
 ### 📹 Video Evidence
 
 * **Demonstration Video:** Shows the vehicle autonomously completing continuous clean laps around Sepang, with the real-time Infield HUD scoreboard, live running timer, and distance tracking visible throughout:
-  * Local video file: [`videos/demo_sepang_10_laps.webm`](videos/demo_sepang_10_laps.webm)
   * **Full Demonstration Video (YouTube):** [https://youtu.be/0211XUaUX8s](https://youtu.be/0211XUaUX8s)
 
 [![Watch the demonstration video](https://img.youtube.com/vi/0211XUaUX8s/maxresdefault.jpg)](https://youtu.be/0211XUaUX8s)

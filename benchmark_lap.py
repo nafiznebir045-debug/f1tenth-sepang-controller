@@ -4,7 +4,7 @@
 F1TENTH Autonomous Racing - 10-Lap Headless Benchmark & Performance Profiler
 Course: Autonomous Vehicles
 Group: 3 | Track: Sepang International Circuit
-Driver: Nevir Nafiz Molla
+Driver: NEBIR NAFIZ MOLLAH
 ==============================================================================
 Runs an ultra-fast headless simulation of 10 consecutive laps on Sepang
 without needing RViz GUI, measuring exact lap times, average speeds,
@@ -183,7 +183,7 @@ class FollowTheGapController:
 def run_benchmark(target_laps=10):
     print("=" * 66)
     print("🏎️   F1TENTH 10-LAP BENCHMARK - SEPANG INTERNATIONAL CIRCUIT")
-    print("👨‍💻  Driver : Nevir Nafiz Molla | Group 3")
+    print("👨‍💻  Driver : NEBIR NAFIZ MOLLAH | Group 3")
     print(f"🎯  Target : {target_laps} Clean Laps Without Collision & Fastest Lap Time")
     print("=" * 66)
 

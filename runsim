@@ -3,7 +3,7 @@
 # F1TENTH Autonomous Racing - Simulation & Controller Launcher
 # Course: Autonomous Vehicles
 # Track: Sepang International Circuit (Group 3)
-# Driver: Nevir Nafiz Molla
+# Driver: NEBIR NAFIZ MOLLAH
 # ==============================================================================
 
 # Ensure script halts cleanly on Ctrl+C or terminal close
@@ -84,7 +84,7 @@ source "$SCRIPT_DIR/install/setup.bash"
 
 echo -e "\033[1;36m==============================================================\033[0m"
 echo -e "\033[1;32m🏎️   F1TENTH AUTONOMOUS RACING SIMULATION RUNNER\033[0m"
-echo -e "\033[1;37m    Group: 3 | Student: Nevir Nafiz Molla\033[0m"
+echo -e "\033[1;37m    Group: 3 | Student: NEBIR NAFIZ MOLLAH\033[0m"
 echo -e "\033[1;37m    Track: Sepang International Circuit\033[0m"
 echo -e "\033[1;37m    Challenges: 10 Laps No Collision & Fastest Lap Time\033[0m"
 echo -e "\033[1;36m==============================================================\033[0m"
