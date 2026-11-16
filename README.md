@@ -370,4 +370,6 @@ python3 benchmark_lap.py
 
 * **Demonstration Video:** Shows the vehicle autonomously completing continuous clean laps around Sepang, with the real-time Infield HUD scoreboard, live running timer, and distance tracking visible throughout:
   * Local video file: [`videos/demo_sepang_10_laps.webm`](videos/demo_sepang_10_laps.webm)
-  * Demonstration Video Link: [https://youtu.be/demo_sepang_nebir](https://youtu.be/demo_sepang_nebir) *(Upload link placeholder)*
+  * **Full Demonstration Video (YouTube):** [https://youtu.be/0211XUaUX8s](https://youtu.be/0211XUaUX8s)
+
+[![Watch the demonstration video](https://img.youtube.com/vi/0211XUaUX8s/maxresdefault.jpg)](https://youtu.be/0211XUaUX8s)
