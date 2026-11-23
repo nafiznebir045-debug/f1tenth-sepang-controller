@@ -25,6 +25,7 @@ This folder contains the complete, verified ROS 2 bag recorded during autonomous
 | **Total Message Count** | $24,573\text{ messages}$ |
 | **Bag Size** | $24.0\text{ MiB}$ |
 | **Compression** | None (Raw CDR serialization) |
+| **Telemetry CSV Logs** | `lap_times.csv`, `lap_times_static_obstacles.csv`, `lap_times_dynamic_overtaking.csv` |
 
 ---
 
