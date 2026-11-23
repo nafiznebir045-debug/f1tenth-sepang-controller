@@ -15,6 +15,8 @@ cleanup() {
     pkill -9 -x gap_node 2>/dev/null || true
     pkill -9 -x rviz2 2>/dev/null || true
     pkill -9 -x robot_state_publisher 2>/dev/null || true
+    pkill -9 -x map_server 2>/dev/null || true
+    pkill -9 -x lifecycle_manager 2>/dev/null || true
     exit 0
 }
 trap cleanup SIGINT SIGTERM SIGHUP
