@@ -235,9 +235,10 @@ nebirAssaignment-main/
 ├── benchmark_lap.py               # Headless 10-lap performance verification suite
 ├── record_bag.py                  # Automated ROS 2 bag recorder script
 ├── telemetry_dashboard.html       # F1-grade live web telemetry cockpit
-├── f1tenth_run_01/                # Official ROS 2 Bag dataset (all topics recorded)
-│   ├── f1tenth_run_01_0.db3       # SQLite3 binary topic storage (24.0 MiB)
-│   └── metadata.yaml              # Bag metadata, duration, message counts & schemas
+├── "ROS 2 Bag"/                   # Official ROS 2 Bag directory
+│   └── f1tenth_run_01/            # Complete recorded run dataset (all topics)
+│       ├── f1tenth_run_01_0.db3   # SQLite3 binary topic storage (24.0 MiB)
+│       └── metadata.yaml          # Bag metadata, duration, message counts & schemas
 ├── .gitignore                     # Build, log, and cache exclusion rules
 ├── videos/                        # Video demonstration assets
 ├── img/                           # System architecture & topic diagrams
@@ -381,19 +382,21 @@ python3 benchmark_lap.py
 
 ## 10. ROS 2 Bag Recording, Verification, and Playback
 
-As required by the project specifications, complete simulation datasets were captured into a dedicated ROS 2 bag file named **`f1tenth_run_01`** containing all published and subscribed topics across the autonomous run.
+As required by the project specifications, complete simulation datasets were captured into a dedicated directory named **`ROS 2 Bag`** inside the folder **`f1tenth_run_01`**, containing all published and subscribed topics across the autonomous run.
 
 ### 1. Recording Procedure
 The simulation recording was initialized with:
 ```bash
+# Create dedicated folder and record inside it:
+mkdir -p "ROS 2 Bag" && cd "ROS 2 Bag"
 ros2 bag record -a -o f1tenth_run_01
 ```
 * **`ros2 bag record`**: Starts the ROS 2 bag recording process.
 * **`-a`**: Records **all** active topics simultaneously (LiDAR scans, odometry, Ackermann drive commands, coordinate transforms, map layers, and RViz HUD markers).
-* **`-o f1tenth_run_01`**: Specifies the output folder name for storage.
+* **`-o f1tenth_run_01`**: Sets the output folder name to `f1tenth_run_01` inside `ROS 2 Bag/`.
 * **`Ctrl + C`**: Gracefully stops recording, flushes all write buffers, and creates the finalized SQLite3 database and schema metadata file.
 
-> **Automated Recording Tool:** You can also run `./record_bag.py` directly from the repository root to automatically launch the simulation, record a clean lap, stop with SIGINT, and print the bag information.
+> **Automated Recording Tool:** You can also run `./record_bag.py` directly from the repository root to automatically launch the simulation, record a clean lap inside `ROS 2 Bag/f1tenth_run_01`, stop with SIGINT, and display the bag information.
 
 ---
 
@@ -401,7 +404,7 @@ ros2 bag record -a -o f1tenth_run_01
 
 To inspect the recorded dataset:
 ```bash
-ros2 bag info f1tenth_run_01
+ros2 bag info "ROS 2 Bag/f1tenth_run_01"
 ```
 
 #### Official Recorded Bag Summary
@@ -434,17 +437,17 @@ You can replay the complete autonomous run directly through ROS 2:
 
 #### Standard Real-Time Playback:
 ```bash
-ros2 bag play f1tenth_run_01
+ros2 bag play "ROS 2 Bag/f1tenth_run_01"
 ```
 
 #### Replay at Half Speed (Slow-Motion Analysis):
 ```bash
-ros2 bag play f1tenth_run_01 --rate 0.5
+ros2 bag play "ROS 2 Bag/f1tenth_run_01" --rate 0.5
 ```
 
 #### Loop Replay Continuously:
 ```bash
-ros2 bag play f1tenth_run_01 -l
+ros2 bag play "ROS 2 Bag/f1tenth_run_01" -l
 ```
 
 #### Visualizing the Replay in RViz:
@@ -458,5 +461,6 @@ To watch the replayed vehicle motion, LiDAR beams, and 3D scoreboard in RViz2:
 2. **Terminal 2 — Replay the Bag:**
    ```bash
    source /opt/ros/humble/setup.bash
-   ros2 bag play f1tenth_run_01
+   ros2 bag play "ROS 2 Bag/f1tenth_run_01"
+   ```
    ```

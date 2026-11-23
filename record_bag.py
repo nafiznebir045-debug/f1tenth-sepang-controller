@@ -11,8 +11,10 @@ import time
 import sys
 
 WORKSPACE_DIR = "/home/admin1/Downloads/nebirAssaignment-main"
+BAG_FOLDER = "ROS 2 Bag"
 BAG_NAME = "f1tenth_run_01"
-OUTPUT_BAG_PATH = os.path.join(WORKSPACE_DIR, BAG_NAME)
+OUTPUT_BAG_DIR = os.path.join(WORKSPACE_DIR, BAG_FOLDER)
+OUTPUT_BAG_PATH = os.path.join(OUTPUT_BAG_DIR, BAG_NAME)
 
 env = os.environ.copy()
 env["ROS_DOMAIN_ID"] = "42"
@@ -56,9 +58,11 @@ ctrl_proc = subprocess.Popen(
 )
 time.sleep(2.0)
 
-print(f"[3/3] Starting ros2 bag record -a -o {BAG_NAME}...")
+os.makedirs(OUTPUT_BAG_DIR, exist_ok=True)
+
+print(f"[3/3] Starting ros2 bag record -a -o '{BAG_NAME}' inside '{BAG_FOLDER}'...")
 bag_proc = subprocess.Popen(
-    f"{source_cmd} && cd {WORKSPACE_DIR} && ros2 bag record -a -o {BAG_NAME}",
+    f"{source_cmd} && cd '{OUTPUT_BAG_DIR}' && ros2 bag record -a -o '{BAG_NAME}'",
     shell=True,
     executable="/bin/bash",
     env=env,
@@ -90,9 +94,9 @@ except Exception:
 subprocess.run("pkill -9 -f 'gym_bridge|gap_node|rviz2|map_server' || true", shell=True)
 time.sleep(2)
 
-print(f"\n[✓] Recording complete! Inspecting {BAG_NAME}...")
+print(f"\n[✓] Recording complete! Inspecting '{BAG_FOLDER}/{BAG_NAME}'...")
 res = subprocess.run(
-    f"{source_cmd} && cd {WORKSPACE_DIR} && ros2 bag info {BAG_NAME}",
+    f"{source_cmd} && cd '{WORKSPACE_DIR}' && ros2 bag info '{BAG_FOLDER}/{BAG_NAME}'",
     shell=True,
     executable="/bin/bash",
     env=env,
