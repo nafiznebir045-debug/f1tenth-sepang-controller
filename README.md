@@ -25,6 +25,7 @@
 7. [Hyperparameter Table and Tuning Strategy](#7-hyperparameter-table-and-tuning-strategy)
 8. [Installation, Configuration, and Execution Instructions](#8-installation-configuration-and-execution-instructions)
 9. [Experimental Results, Lap Distance, and Video Evidence](#9-experimental-results-lap-distance-and-video-evidence)
+10. [ROS 2 Bag Recording, Verification, and Playback](#10-ros-2-bag-recording-verification-and-playback)
 
 ---
 
@@ -232,10 +233,13 @@ nebirAssaignment-main/
 ├── runsim.bat                     # Windows CMD execution script
 ├── runsim.ps1                     # Windows PowerShell execution script
 ├── benchmark_lap.py               # Headless 10-lap performance verification suite
+├── record_bag.py                  # Automated ROS 2 bag recorder script
 ├── telemetry_dashboard.html       # F1-grade live web telemetry cockpit
+├── f1tenth_run_01/                # Official ROS 2 Bag dataset (all topics recorded)
+│   ├── f1tenth_run_01_0.db3       # SQLite3 binary topic storage (24.0 MiB)
+│   └── metadata.yaml              # Bag metadata, duration, message counts & schemas
 ├── .gitignore                     # Build, log, and cache exclusion rules
-├── videos/                        # Video demonstration recordings
-│   └── demo_sepang_10_laps.webm   # 10 collision-free laps demonstration video
+├── videos/                        # Video demonstration assets
 ├── img/                           # System architecture & topic diagrams
 ├── Laboratories/                  # Course laboratories (Labs 1–7)
 └── src/
@@ -372,3 +376,87 @@ python3 benchmark_lap.py
   * **Full Demonstration Video (YouTube):** [https://youtu.be/0211XUaUX8s](https://youtu.be/0211XUaUX8s)
 
 [![Watch the demonstration video](https://img.youtube.com/vi/0211XUaUX8s/maxresdefault.jpg)](https://youtu.be/0211XUaUX8s)
+
+---
+
+## 10. ROS 2 Bag Recording, Verification, and Playback
+
+As required by the project specifications, complete simulation datasets were captured into a dedicated ROS 2 bag file named **`f1tenth_run_01`** containing all published and subscribed topics across the autonomous run.
+
+### 1. Recording Procedure
+The simulation recording was initialized with:
+```bash
+ros2 bag record -a -o f1tenth_run_01
+```
+* **`ros2 bag record`**: Starts the ROS 2 bag recording process.
+* **`-a`**: Records **all** active topics simultaneously (LiDAR scans, odometry, Ackermann drive commands, coordinate transforms, map layers, and RViz HUD markers).
+* **`-o f1tenth_run_01`**: Specifies the output folder name for storage.
+* **`Ctrl + C`**: Gracefully stops recording, flushes all write buffers, and creates the finalized SQLite3 database and schema metadata file.
+
+> **Automated Recording Tool:** You can also run `./record_bag.py` directly from the repository root to automatically launch the simulation, record a clean lap, stop with SIGINT, and print the bag information.
+
+---
+
+### 2. Inspecting and Verifying the Recorded Bag (`ros2 bag info`)
+
+To inspect the recorded dataset:
+```bash
+ros2 bag info f1tenth_run_01
+```
+
+#### Official Recorded Bag Summary
+```text
+Files:             f1tenth_run_01_0.db3
+Bag size:          24.0 MiB
+Storage id:        sqlite3
+Duration:          37.255 s
+Start:             Nov 23 2026 20:48:15.458 (1795434495.458)
+End:               Nov 23 2026 20:48:52.713 (1795434532.713)
+Messages:          24,573
+Topic information: Topic: /scan | Type: sensor_msgs/msg/LaserScan | Count: 3354 | Serialization Format: cdr
+                   Topic: /ego_racecar/odom | Type: nav_msgs/msg/Odometry | Count: 3354 | Serialization Format: cdr
+                   Topic: /drive | Type: ackermann_msgs/msg/AckermannDriveStamped | Count: 3365 | Serialization Format: cdr
+                   Topic: /tf | Type: tf2_msgs/msg/TFMessage | Count: 13460 | Serialization Format: cdr
+                   Topic: /tf_static | Type: tf2_msgs/msg/TFMessage | Count: 1 | Serialization Format: cdr
+                   Topic: /map | Type: nav_msgs/msg/OccupancyGrid | Count: 1 | Serialization Format: cdr
+                   Topic: /lap_marker | Type: visualization_msgs/msg/Marker | Count: 89 | Serialization Format: cdr
+                   Topic: /lap_info | Type: std_msgs/msg/String | Count: 168 | Serialization Format: cdr
+                   Topic: /ego_robot_description | Type: std_msgs/msg/String | Count: 1 | Serialization Format: cdr
+                   Topic: /rosout | Type: rcl_interfaces/msg/Log | Count: 32 | Serialization Format: cdr
+                   Topic: /bond | Type: bond/msg/Status | Count: 748 | Serialization Format: cdr
+```
+
+---
+
+### 3. Replaying the Recorded ROS Bag
+
+You can replay the complete autonomous run directly through ROS 2:
+
+#### Standard Real-Time Playback:
+```bash
+ros2 bag play f1tenth_run_01
+```
+
+#### Replay at Half Speed (Slow-Motion Analysis):
+```bash
+ros2 bag play f1tenth_run_01 --rate 0.5
+```
+
+#### Loop Replay Continuously:
+```bash
+ros2 bag play f1tenth_run_01 -l
+```
+
+#### Visualizing the Replay in RViz:
+To watch the replayed vehicle motion, LiDAR beams, and 3D scoreboard in RViz2:
+1. **Terminal 1 — Launch RViz2 with Sepang view:**
+   ```bash
+   source /opt/ros/humble/setup.bash
+   source install/setup.bash
+   rviz2 -d src/f1tenth_gym_ros/launch/gym_bridge.rviz
+   ```
+2. **Terminal 2 — Replay the Bag:**
+   ```bash
+   source /opt/ros/humble/setup.bash
+   ros2 bag play f1tenth_run_01
+   ```
