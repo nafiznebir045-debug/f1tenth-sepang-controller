@@ -110,12 +110,12 @@ class ReactiveFollowGap(Node):
 
         # ----------------- Follow-the-Gap Parameters -----------------
         # 6x speed-tuned: validated 10000 control cycles (0 collisions, min_clear=0.742m)
-        self.bubble_radius = 0.67          # Safety bubble radius around obstacles (m)  [6x: enlarged]
+        self.bubble_radius = 0.50          # Safety bubble radius around obstacles (m)
         self.max_lidar_dist = 18.0         # Max forward gap-search horizon (m)
         self.fov_deg = 142.0               # Active field of view in degrees (+/- 71 deg)
-        self.min_gap_dist = 1.10           # Free-space threshold for traversable gaps (m)
+        self.min_gap_dist = 1.05           # Free-space threshold for traversable gaps (m)
         self.disparity_threshold = 0.28    # Disparity edge step threshold (m)
-        self.car_width_margin = 0.61       # Vehicle half-width expansion margin (m)   [6x: enlarged]
+        self.car_width_margin = 0.40       # Vehicle half-width expansion margin (m)
         self.deep_weight = 0.58            # Optimal blend: 58% deepest range + 42% center (6x safe)
         self.gap_power = 7.0               # Smooth corridor weighting
 
@@ -136,7 +136,7 @@ class ReactiveFollowGap(Node):
         self.max_decel = 15.0              # Longitudinal braking limit (m/s^2)        [6x: hard braking]
         self.current_speed = 0.0           # Rate-limited vehicle speed (m/s)
         self.prev_steering = 0.0           # Low-pass filtered previous steering angle
-        self.declare_parameter('sim_speed_multiplier', 6.0)
+        self.declare_parameter('sim_speed_multiplier', 1.0)
         self.sim_speed_multiplier = float(self.get_parameter('sim_speed_multiplier').value)
         self.last_drive_time = self.get_clock().now()
 
@@ -528,8 +528,10 @@ class ReactiveFollowGap(Node):
     # =========================================================================
     def publish_rviz_hud(self, car_x, car_y):
         """
-        Publishes clean ASCII 3D text marker to /lap_marker at 5 Hz:
-          - Marker 2: Infield gap lap & collision summary (pure ASCII)
+        Publishes clean 3D markers to /lap_marker:
+          - Marker 10: 3D Racecar Body (Blue chassis) on ego_racecar/base_link
+          - Marker 11: 3D Floating Driver & Real Clock Tag above car
+          - Marker 2: Top-Right Corner Lap & Collision Scoreboard
         """
         now = self.get_clock().now()
         ts = now.to_msg()
@@ -541,19 +543,48 @@ class ReactiveFollowGap(Node):
 
         curr_lap_num = min(self.target_laps, self.lap_count + 1)
 
-        # Delete removed/legacy markers (yellow car HUD id=0, red dot id=1, box id=3, green gantry id=4)
-        if not self.deleted_legacy_markers:
-            for legacy_id in (0, 1, 3, 4):
-                m_del = Marker()
-                m_del.header.frame_id = 'map'
-                m_del.header.stamp = ts
-                m_del.ns = 'lap_hud'
-                m_del.id = legacy_id
-                m_del.action = Marker.DELETE
-                self.marker_pub.publish(m_del)
-            self.deleted_legacy_markers = True
+        # ---------------- 1. 3D Vehicle Body (Marker id=10) ----------------
+        m_car = Marker()
+        m_car.header.frame_id = 'ego_racecar/base_link'
+        m_car.header.stamp = ts
+        m_car.ns = 'car_body'
+        m_car.id = 10
+        m_car.type = Marker.CUBE
+        m_car.action = Marker.ADD
+        m_car.pose.position.x = 0.165
+        m_car.pose.position.y = 0.0
+        m_car.pose.position.z = 0.12
+        m_car.pose.orientation.w = 1.0
+        m_car.scale.x = 0.60  # Length
+        m_car.scale.y = 0.32  # Width
+        m_car.scale.z = 0.18  # Height
+        m_car.color.r = 0.12  # F1 Blue
+        m_car.color.g = 0.55
+        m_car.color.b = 1.0
+        m_car.color.a = 0.95
+        self.marker_pub.publish(m_car)
 
-        # ---------------- Top-Right Corner Lap & Collision Text (id=2) ----------------
+        # ---------------- 2. Floating Driver & Real Clock Tag (Marker id=11) ----------------
+        m_tag = Marker()
+        m_tag.header.frame_id = 'ego_racecar/base_link'
+        m_tag.header.stamp = ts
+        m_tag.ns = 'car_body'
+        m_tag.id = 11
+        m_tag.type = Marker.TEXT_VIEW_FACING
+        m_tag.action = Marker.ADD
+        m_tag.pose.position.x = 0.0
+        m_tag.pose.position.y = 0.0
+        m_tag.pose.position.z = 0.85
+        m_tag.pose.orientation.w = 1.0
+        m_tag.scale.z = 0.50
+        m_tag.color.r = 1.0   # Gold / Yellow
+        m_tag.color.g = 0.90
+        m_tag.color.b = 0.0
+        m_tag.color.a = 1.0
+        m_tag.text = f"NEBIR NAFIZ MOLLAH\nLap: {curr_lap_num}/{self.target_laps} | Spd: {self.current_speed:.1f} m/s | Clock: {elapsed:5.1f}s"
+        self.marker_pub.publish(m_tag)
+
+        # ---------------- 3. Top-Right Corner Lap & Collision Scoreboard (Marker id=2) ----------------
         m_board = Marker()
         m_board.header.frame_id = 'map'
         m_board.header.stamp = ts
@@ -607,7 +638,7 @@ class ReactiveFollowGap(Node):
         # Single-line clear & overwrite for smooth terminal rendering
         line = (
             f"\r🏎️  [LAP {curr_lap_num:2d}/{self.target_laps}] "
-            f"⏱️  Timer: {elapsed:5.1f} s | "
+            f"⏱️  Real Clock: {elapsed:5.1f} s | "
             f"⚡ Speed: {self.current_speed:4.1f} m/s ({self.current_speed * 3.6:4.1f} km/h) | "
             f"🏆 Best: {best_str:<18} | "
             f"📏 Lap Dist: {self.total_lap_distance:5.1f} m"
