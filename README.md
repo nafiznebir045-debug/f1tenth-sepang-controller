@@ -233,9 +233,11 @@ nebirAssaignment-main/
 ├── runsim.bat                     # Windows CMD execution script
 ├── runsim.ps1                     # Windows PowerShell execution script
 ├── benchmark_lap.py               # Headless 10-lap performance verification suite
+├── play_bag.sh                    # One-command ROS 2 bag player script
 ├── record_bag.py                  # Automated ROS 2 bag recorder script
 ├── telemetry_dashboard.html       # F1-grade live web telemetry cockpit
 ├── "ROS 2 Bag"/                   # Official ROS 2 Bag folder (all topics recorded)
+│   ├── README.md                  # Dataset documentation & topic frequency breakdown
 │   ├── f1tenth_run_01_0.db3       # SQLite3 binary topic storage (24.0 MiB)
 │   └── metadata.yaml              # Bag metadata, duration, message counts & schemas
 ├── .gitignore                     # Build, log, and cache exclusion rules
@@ -430,20 +432,29 @@ Topic information: Topic: /scan | Type: sensor_msgs/msg/LaserScan | Count: 3354 
 
 ### 3. Replaying the Recorded ROS Bag
 
-You can replay the complete autonomous run directly through ROS 2:
+You can replay the complete autonomous run directly using either the provided helper script or native ROS 2 commands:
 
-#### Standard Real-Time Playback:
+#### Option A: Turnkey One-Command Replay (Recommended):
 ```bash
+# Replay in real-time:
+./play_bag.sh
+
+# Replay at half speed (slow-motion analysis):
+./play_bag.sh --rate 0.5
+```
+
+#### Option B: Native ROS 2 CLI Commands:
+```bash
+# Sourcing ROS 2
+source /opt/ros/humble/setup.bash
+
+# Standard real-time playback:
 ros2 bag play "ROS 2 Bag"
-```
 
-#### Replay at Half Speed (Slow-Motion Analysis):
-```bash
+# Half-speed playback:
 ros2 bag play "ROS 2 Bag" --rate 0.5
-```
 
-#### Loop Replay Continuously:
-```bash
+# Loop replay continuously:
 ros2 bag play "ROS 2 Bag" -l
 ```
 
