@@ -491,6 +491,18 @@ class ReactiveFollowGap(Node):
             self.lap_times.append(lap_seconds)
             self.lap_collisions.append(self.current_lap_collisions)
             self.current_lap_collisions = 0
+            avg_lap_spd = self.total_lap_distance / max(1.0, lap_seconds)
+
+            # Log lap time to lap_times.csv
+            try:
+                csv_path = os.path.expanduser('~/Downloads/nebirAssaignment-main/lap_times.csv')
+                is_new = not os.path.exists(csv_path) or os.path.getsize(csv_path) == 0
+                with open(csv_path, 'a') as f_csv:
+                    if is_new:
+                        f_csv.write("lap,lap_time_s,avg_speed_mps,distance_m,collisions\n")
+                    f_csv.write(f"{self.lap_count},{lap_seconds:.3f},{avg_lap_spd:.2f},{self.total_lap_distance:.1f},{self.lap_collisions[-1]}\n")
+            except Exception:
+                pass
 
             is_fastest = False
             if lap_seconds < self.best_lap_time:
@@ -498,7 +510,6 @@ class ReactiveFollowGap(Node):
                 self.best_lap_num = self.lap_count
                 is_fastest = True
 
-            avg_lap_spd = self.total_lap_distance / max(1.0, lap_seconds)
             star_txt = " ⭐ NEW FASTEST LAP!" if is_fastest else ""
 
             # Print celebrated banner in terminal

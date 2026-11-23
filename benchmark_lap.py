@@ -272,6 +272,14 @@ def run_benchmark(target_laps=10):
             print(f"   Lap {i:2d} : {t:6.2f} s{star}")
         print("=" * 66 + "\n")
 
+    if completed_laps > 0:
+        csv_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'lap_times.csv')
+        with open(csv_file, 'w') as f:
+            f.write("lap,lap_time_s\n")
+            for i, t in enumerate(lap_times, 1):
+                f.write(f"{i},{t:.3f}\n")
+        print(f"💾 Saved lap times to {csv_file}\n")
+
 
 if __name__ == '__main__':
     run_benchmark(10)
