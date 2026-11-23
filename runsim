@@ -1,16 +1,22 @@
 #!/usr/bin/env bash
 # ==============================================================================
-# F1TENTH Autonomous Racing - Simulation & Controller Launcher
-# Course: Autonomous Vehicles
-# Track: Sepang International Circuit (Group 3)
-# Driver: NEBIR NAFIZ MOLLAH
+# F1TENTH Autonomous Racing - Final Project Master Launcher
+# Course: Autonomous Vehicles | Final Project
+# Student: NEBIR NAFIZ MOLLAH
+# Assigned Circuit: Sepang International Circuit (Group 3)
 # ==============================================================================
 
-# Ensure script halts cleanly on Ctrl+C or terminal close
+set -e
+
+# Robust script directory detection
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+cd "$SCRIPT_DIR"
+
 cleanup() {
     echo -e "\n\033[1;33m[!] Stopping all simulation nodes and RViz...\033[0m"
     pkill -f "gym_bridge" 2>/dev/null || true
     pkill -f "gap_node" 2>/dev/null || true
+    pkill -f "opp_node" 2>/dev/null || true
     pkill -f "rviz2" 2>/dev/null || true
     pkill -f "map_server" 2>/dev/null || true
     pkill -f "lifecycle_manager" 2>/dev/null || true
@@ -19,85 +25,128 @@ cleanup() {
 }
 trap cleanup SIGINT SIGTERM SIGHUP
 
-# Clean up any leftover processes from previous runs before starting
 pkill -f "gym_bridge" 2>/dev/null || true
 pkill -f "gap_node" 2>/dev/null || true
+pkill -f "opp_node" 2>/dev/null || true
 pkill -f "rviz2" 2>/dev/null || true
 pkill -f "map_server" 2>/dev/null || true
 pkill -f "lifecycle_manager" 2>/dev/null || true
 pkill -f "robot_state_publisher" 2>/dev/null || true
 sleep 0.5
 
-# Ensure WSLg X11/Wayland display variables are set
 export DISPLAY="${DISPLAY:-:0}"
 export WAYLAND_DISPLAY="${WAYLAND_DISPLAY:-wayland-0}"
-
-# Isolate ROS 2 traffic from LAN / other network nodes
 export ROS_LOCALHOST_ONLY=1
 export ROS_DOMAIN_ID=42
 
-# Robustly resolve script location even if invoked through symlinks
-SOURCE="${BASH_SOURCE[0]}"
-while [ -h "$SOURCE" ]; do
-    DIR="$(cd -P "$(dirname "$SOURCE")" >/dev/null 2>&1 && pwd)"
-    SOURCE="$(readlink "$SOURCE")"
-    [[ $SOURCE != /* ]] && SOURCE="$DIR/$SOURCE"
-done
-SCRIPT_DIR="$(cd -P "$(dirname "$SOURCE")" >/dev/null 2>&1 && pwd)"
-
-# Fallback to standard project path if needed
-if [ ! -d "$SCRIPT_DIR/src/f1tenth_gym_ros" ]; then
-    if [ -d "/home/admin1/Downloads/nebirAssaignment-main/src/f1tenth_gym_ros" ]; then
-        SCRIPT_DIR="/home/admin1/Downloads/nebirAssaignment-main"
-    elif [ -d "/mnt/d/nebirAssaignment/src/f1tenth_gym_ros" ]; then
-        SCRIPT_DIR="/mnt/d/nebirAssaignment"
-    fi
-fi
-
-cd "$SCRIPT_DIR"
-
-# 1. Source ROS 2 system installation
-if [ -f "/opt/ros/jazzy/setup.bash" ]; then
-    source /opt/ros/jazzy/setup.bash
-elif [ -f "/opt/ros/humble/setup.bash" ]; then
+# Source ROS 2
+if [ -f "/opt/ros/humble/setup.bash" ]; then
     source /opt/ros/humble/setup.bash
+elif [ -f "/opt/ros/jazzy/setup.bash" ]; then
+    source /opt/ros/jazzy/setup.bash
 else
-    echo -e "\033[1;31mError: No ROS 2 installation found in /opt/ros!\033[0m"
+    echo -e "\033[1;31mError: ROS 2 setup.bash not found!\033[0m"
     exit 1
 fi
 
-# 2. Check and build workspace if needed, and always sync latest Python/RViz sources into build/
-if [ ! -f "$SCRIPT_DIR/install/setup.bash" ]; then
-    echo -e "\033[1;33m[*] Building workspace with colcon...\033[0m"
-    colcon build --symlink-install
-else
-    if [ -d "$SCRIPT_DIR/build/controllers/controllers" ]; then
-        cp -f "$SCRIPT_DIR/src/controllers/controllers/"*.py "$SCRIPT_DIR/build/controllers/controllers/" 2>/dev/null || true
-    fi
-    if [ -d "$SCRIPT_DIR/build/f1tenth_gym_ros/f1tenth_gym_ros" ]; then
-        cp -f "$SCRIPT_DIR/src/f1tenth_gym_ros/f1tenth_gym_ros/"*.py "$SCRIPT_DIR/build/f1tenth_gym_ros/f1tenth_gym_ros/" 2>/dev/null || true
-    fi
+echo -e "\033[1;36m========================================================================\033[0m"
+echo -e "\033[1;32m🏎️   F1TENTH REACTIVE CONTROLLER COMPETITION - SEPANG CIRCUIT\033[0m"
+echo -e "\033[1;37m    Student Driver : NEBIR NAFIZ MOLLAH\033[0m"
+echo -e "\033[1;37m    Group          : Group 3 | Track: Sepang International Circuit\033[0m"
+echo -e "\033[1;36m========================================================================\033[0m"
+
+CHOICE="${1:-}"
+
+if [ -z "$CHOICE" ]; then
+    echo -e "\nPlease select the competition mode:"
+    echo -e "  \033[1;33m1)\033[0m Challenge 1: Static Obstacle Challenge (5 Obstacles on Sepang, 10 Laps)"
+    echo -e "  \033[1;33m2)\033[0m Challenge 2: Dynamic Obstacle Challenge (Robot Overtaking, 10 Laps)"
+    echo -e "  \033[1;33m3)\033[0m Headless 10-Lap Benchmark & Verification (Static Obstacles)"
+    echo -e "  \033[1;33m4)\033[0m Headless 10-Lap Benchmark & Verification (Dynamic Overtaking)"
+    echo -e "  \033[1;33m5)\033[0m Record ROS 2 Bag (f1tenth_run_01)"
+    echo -e "  \033[1;33m6)\033[0m Play Recorded ROS 2 Bag"
+    read -p "Select option [1-6] (default: 1): " CHOICE
+    CHOICE="${CHOICE:-1}"
 fi
 
-# 3. Source local workspace
-source "$SCRIPT_DIR/install/setup.bash"
+case "$CHOICE" in
+    1)
+        echo -e "\n\033[1;34m[*] Launching Challenge 1: Static Obstacle Challenge (5 Obstacles)...\033[0m"
+        # Set sim.yaml to static obstacles map
+        cp "$SCRIPT_DIR/src/f1tenth_gym_ros/config/sim.yaml" /tmp/sim_backup.yaml 2>/dev/null || true
+        sed -i "s|map_path:.*|map_path: '$SCRIPT_DIR/src/f1tenth_gym_ros/maps/Sepang_obs_map'|g" "$SCRIPT_DIR/src/f1tenth_gym_ros/config/sim.yaml"
+        sed -i "s|num_agent:.*|num_agent: 1|g" "$SCRIPT_DIR/src/f1tenth_gym_ros/config/sim.yaml"
 
-echo -e "\033[1;36m==============================================================\033[0m"
-echo -e "\033[1;32m🏎️   F1TENTH AUTONOMOUS RACING SIMULATION RUNNER\033[0m"
-echo -e "\033[1;37m    Group: 3 | Student: NEBIR NAFIZ MOLLAH\033[0m"
-echo -e "\033[1;37m    Track: Sepang International Circuit\033[0m"
-echo -e "\033[1;37m    Challenges: 10 Laps No Collision & Fastest Lap Time\033[0m"
-echo -e "\033[1;36m==============================================================\033[0m"
+        # Copy to ros2_ws and build
+        cp "$SCRIPT_DIR/src/f1tenth_gym_ros/config/sim.yaml" /home/admin1/ros2_ws/src/F1Tenth-Repository/src/f1tenth_gym_ros/config/sim.yaml
+        cd /home/admin1/ros2_ws
+        colcon build --packages-select f1tenth_gym_ros controllers
+        source /home/admin1/ros2_ws/install/setup.bash
 
-echo -e "\n\033[1;34m[*] Launching F1TENTH Simulator & RViz2 (logs -> /tmp/f1tenth_sim.log)...\033[0m"
-ros2 launch f1tenth_gym_ros gym_bridge_launch.py > /tmp/f1tenth_sim.log 2>&1 &
-SIM_PID=$!
+        echo -e "\033[1;32m[*] Starting F1TENTH Simulator bridge...\033[0m"
+        ros2 launch f1tenth_gym_ros gym_bridge_launch.py > /tmp/f1tenth_sim.log 2>&1 &
+        SIM_PID=$!
+        sleep 3.5
 
-# Allow simulator and RViz 3.5 seconds to initialize
-sleep 3.5
+        echo -e "\033[1;32m[*] Starting Follow-the-Gap Controller with Lap Counter & Timer...\033[0m"
+        echo -e "\033[1;35m📊 Live Telemetry Web Dashboard: http://localhost:8088\033[0m\n"
+        ros2 run controllers gap_node
+        wait $SIM_PID
+        ;;
 
-echo -e "\n\033[1;32m[*] Starting Follow-the-Gap Controller...\033[0m"
-echo -e "\033[1;35m📊 Live Telemetry Dashboard : http://localhost:8088\033[0m\n"
-ros2 run controllers gap_node
+    2)
+        echo -e "\n\033[1;34m[*] Launching Challenge 2: Dynamic Obstacle Challenge (Robot Overtaking)...\033[0m"
+        sed -i "s|map_path:.*|map_path: '$SCRIPT_DIR/src/f1tenth_gym_ros/maps/Sepang_map'|g" "$SCRIPT_DIR/src/f1tenth_gym_ros/config/sim.yaml"
+        sed -i "s|num_agent:.*|num_agent: 2|g" "$SCRIPT_DIR/src/f1tenth_gym_ros/config/sim.yaml"
 
-wait $SIM_PID
+        cp "$SCRIPT_DIR/src/f1tenth_gym_ros/config/sim.yaml" /home/admin1/ros2_ws/src/F1Tenth-Repository/src/f1tenth_gym_ros/config/sim.yaml
+        cd /home/admin1/ros2_ws
+        colcon build --packages-select f1tenth_gym_ros controllers
+        source /home/admin1/ros2_ws/install/setup.bash
+
+        echo -e "\033[1;32m[*] Starting F1TENTH Simulator bridge (2 agents)...\033[0m"
+        ros2 launch f1tenth_gym_ros gym_bridge_launch.py > /tmp/f1tenth_sim.log 2>&1 &
+        SIM_PID=$!
+        sleep 3.5
+
+        echo -e "\033[1;33m[*] Starting Opponent Vehicle Controller (/opp_drive)...\033[0m"
+        ros2 run controllers opp_node > /tmp/opp_node.log 2>&1 &
+        OPP_PID=$!
+        sleep 1.0
+
+        echo -e "\033[1;32m[*] Starting Ego Overtaking Controller (/drive) with Lap Counter & Timer...\033[0m"
+        echo -e "\033[1;35m📊 Live Telemetry Web Dashboard: http://localhost:8088\033[0m\n"
+        ros2 run controllers gap_node
+        kill $OPP_PID 2>/dev/null || true
+        wait $SIM_PID
+        ;;
+
+    3)
+        echo -e "\n\033[1;34m[*] Running Headless 10-Lap Benchmark (Challenge 1: Static Obstacles)...\033[0m"
+        python3 "$SCRIPT_DIR/benchmark_10_laps.py" --challenge static --laps 10
+        ;;
+
+    4)
+        echo -e "\n\033[1;34m[*] Running Headless 10-Lap Benchmark (Challenge 2: Dynamic Overtaking)...\033[0m"
+        python3 "$SCRIPT_DIR/benchmark_10_laps.py" --challenge dynamic --laps 10
+        ;;
+
+    5)
+        echo -e "\n\033[1;34m[*] Recording ROS 2 Bag (f1tenth_run_01)...\033[0m"
+        cd "$SCRIPT_DIR"
+        source /opt/ros/humble/setup.bash
+        rm -rf "$SCRIPT_DIR/f1tenth_run_01_recorded"
+        ros2 bag record -a -o f1tenth_run_01_recorded
+        ;;
+
+    6)
+        echo -e "\n\033[1;34m[*] Playing recorded ROS 2 Bag (f1tenth_run_01)...\033[0m"
+        source /opt/ros/humble/setup.bash
+        ros2 bag play "$SCRIPT_DIR/f1tenth_run_01"
+        ;;
+
+    *)
+        echo -e "\033[1;31mInvalid option '$CHOICE'.\033[0m"
+        exit 1
+        ;;
+esac
