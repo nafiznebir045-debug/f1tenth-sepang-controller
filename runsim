@@ -14,24 +14,26 @@ cd "$SCRIPT_DIR"
 
 cleanup() {
     echo -e "\n\033[1;33m[!] Stopping all simulation nodes and RViz...\033[0m"
-    pkill -f "gym_bridge" 2>/dev/null || true
-    pkill -f "gap_node" 2>/dev/null || true
-    pkill -f "opp_node" 2>/dev/null || true
-    pkill -f "rviz2" 2>/dev/null || true
-    pkill -f "map_server" 2>/dev/null || true
-    pkill -f "lifecycle_manager" 2>/dev/null || true
-    pkill -f "robot_state_publisher" 2>/dev/null || true
+    kill -9 $SIM_PID 2>/dev/null || true
+    kill -9 $OPP_PID 2>/dev/null || true
+    pkill -9 -f "gym_bridge" 2>/dev/null || true
+    pkill -9 -f "gap_node" 2>/dev/null || true
+    pkill -9 -f "opp_node" 2>/dev/null || true
+    pkill -9 -f "rviz2" 2>/dev/null || true
+    pkill -9 -f "map_server" 2>/dev/null || true
+    pkill -9 -f "lifecycle_manager" 2>/dev/null || true
+    pkill -9 -f "robot_state_publisher" 2>/dev/null || true
     exit 0
 }
 trap cleanup SIGINT SIGTERM SIGHUP
 
-pkill -f "gym_bridge" 2>/dev/null || true
-pkill -f "gap_node" 2>/dev/null || true
-pkill -f "opp_node" 2>/dev/null || true
-pkill -f "rviz2" 2>/dev/null || true
-pkill -f "map_server" 2>/dev/null || true
-pkill -f "lifecycle_manager" 2>/dev/null || true
-pkill -f "robot_state_publisher" 2>/dev/null || true
+pkill -9 -f "gym_bridge" 2>/dev/null || true
+pkill -9 -f "gap_node" 2>/dev/null || true
+pkill -9 -f "opp_node" 2>/dev/null || true
+pkill -9 -f "rviz2" 2>/dev/null || true
+pkill -9 -f "map_server" 2>/dev/null || true
+pkill -9 -f "lifecycle_manager" 2>/dev/null || true
+pkill -9 -f "robot_state_publisher" 2>/dev/null || true
 sleep 0.5
 
 export DISPLAY="${DISPLAY:-:0}"
@@ -63,7 +65,7 @@ if [ -z "$CHOICE" ]; then
     echo -e "  \033[1;33m2)\033[0m Challenge 2: Dynamic Obstacle Challenge (Robot Overtaking, 10 Laps)"
     echo -e "  \033[1;33m3)\033[0m Headless 10-Lap Benchmark & Verification (Static Obstacles)"
     echo -e "  \033[1;33m4)\033[0m Headless 10-Lap Benchmark & Verification (Dynamic Overtaking)"
-    echo -e "  \033[1;33m5)\033[0m Record ROS 2 Bag (f1tenth_run_01)"
+    echo -e "  \033[1;33m5)\033[0m Record ROS 2 Bag (ROS 2 Bag)"
     echo -e "  \033[1;33m6)\033[0m Play Recorded ROS 2 Bag"
     read -p "Select option [1-6] (default: 1): " CHOICE
     CHOICE="${CHOICE:-1}"
