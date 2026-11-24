@@ -22,7 +22,7 @@ def generate_launch_description():
             robot_desc = ''
 
     # Read map yaml from sim.yaml configuration
-    map_yaml_file = os.path.join(pkg_share, 'maps', 'Sepang_obs_map.yaml')
+    map_yaml_file = os.path.join(pkg_share, 'maps', 'Sepang_map.yaml')
     try:
         with open(config_file, 'r') as f:
             cfg = yaml.safe_load(f)
