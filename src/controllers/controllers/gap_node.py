@@ -554,48 +554,17 @@ class ReactiveFollowGap(Node):
 
         curr_lap_num = min(self.target_laps, self.lap_count + 1)
 
-        # ---------------- 1. 3D Vehicle Body (Marker id=10) ----------------
-        m_car = Marker()
-        m_car.header.frame_id = 'ego_racecar/base_link'
-        m_car.header.stamp = ts
-        m_car.ns = 'car_body'
-        m_car.id = 10
-        m_car.type = Marker.CUBE
-        m_car.action = Marker.ADD
-        m_car.pose.position.x = 0.165
-        m_car.pose.position.y = 0.0
-        m_car.pose.position.z = 0.12
-        m_car.pose.orientation.w = 1.0
-        m_car.scale.x = 0.60  # Length
-        m_car.scale.y = 0.32  # Width
-        m_car.scale.z = 0.18  # Height
-        m_car.color.r = 0.12  # F1 Blue
-        m_car.color.g = 0.55
-        m_car.color.b = 1.0
-        m_car.color.a = 0.95
-        self.marker_pub.publish(m_car)
+        # Ensure any attached markers behind/above the car are deleted so only the car is rendered
+        for mid in (10, 11):
+            m_del = Marker()
+            m_del.header.frame_id = 'ego_racecar/base_link'
+            m_del.header.stamp = ts
+            m_del.ns = 'car_body'
+            m_del.id = mid
+            m_del.action = Marker.DELETE
+            self.marker_pub.publish(m_del)
 
-        # ---------------- 2. Floating Driver & Real Clock Tag (Marker id=11) ----------------
-        m_tag = Marker()
-        m_tag.header.frame_id = 'ego_racecar/base_link'
-        m_tag.header.stamp = ts
-        m_tag.ns = 'car_body'
-        m_tag.id = 11
-        m_tag.type = Marker.TEXT_VIEW_FACING
-        m_tag.action = Marker.ADD
-        m_tag.pose.position.x = 0.0
-        m_tag.pose.position.y = 0.0
-        m_tag.pose.position.z = 0.85
-        m_tag.pose.orientation.w = 1.0
-        m_tag.scale.z = 0.50
-        m_tag.color.r = 1.0   # Gold / Yellow
-        m_tag.color.g = 0.90
-        m_tag.color.b = 0.0
-        m_tag.color.a = 1.0
-        m_tag.text = f"NEBIR NAFIZ MOLLAH\nLap: {curr_lap_num}/{self.target_laps} | Spd: {self.current_speed:.1f} m/s | Clock: {elapsed:5.1f}s"
-        self.marker_pub.publish(m_tag)
-
-        # ---------------- 3. Top-Right Corner Lap & Collision Scoreboard (Marker id=2) ----------------
+        # ---------------- Top-Right Corner Lap & Collision Scoreboard (Marker id=2) ----------------
         m_board = Marker()
         m_board.header.frame_id = 'map'
         m_board.header.stamp = ts
