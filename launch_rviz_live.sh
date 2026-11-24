@@ -33,7 +33,7 @@ export ROS_LOCALHOST_ONLY=1
 export ROS_DOMAIN_ID=42
 
 source /opt/ros/humble/setup.bash
-source /home/admin1/ros2_ws/install/setup.bash
+source "$SCRIPT_DIR/install/setup.bash"
 
 echo -e "\033[1;36m========================================================================\033[0m"
 echo -e "\033[1;32m🏎️   F1TENTH LIVE RVIZ 3D SIMULATION - REAL CLOCK TIME\033[0m"
@@ -41,10 +41,6 @@ echo -e "\033[1;37m    Driver : NEBIR NAFIZ MOLLAH | Group 3\033[0m"
 echo -e "\033[1;37m    Track  : Sepang International Circuit (with 5 Static Obstacles)\033[0m"
 echo -e "\033[1;37m    Window : Opening RViz 3D on your screen (DISPLAY=:0)...\033[0m"
 echo -e "\033[1;36m========================================================================\033[0m\n"
-
-# Copy latest configurations
-cp -r "$SCRIPT_DIR/src/f1tenth_gym_ros/"* /home/admin1/ros2_ws/src/F1Tenth-Repository/src/f1tenth_gym_ros/
-cp -r "$SCRIPT_DIR/src/controllers/"* /home/admin1/ros2_ws/src/F1Tenth-Repository/src/controllers/
 
 # Launch simulator bridge and RViz
 ros2 launch f1tenth_gym_ros gym_bridge_launch.py &

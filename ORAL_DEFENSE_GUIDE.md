@@ -82,11 +82,11 @@ In `gap_node.py`, the odometry callback listens to `/ego_racecar/odom`:
 
 ---
 
-### Q7: What ROS 2 topics are recorded in your ROS 2 Bag (`f1tenth_run_01`)?
+### Q7: What ROS 2 topics are recorded in your ROS 2 Bag (`ROS 2 Bag` / `f1tenth_run_01`)?
 **Answer:**  
 The bag was recorded using:
-`ros2 bag record -a -o f1tenth_run_01`  
-Verified with `ros2 bag info f1tenth_run_01`:
+`ros2 bag record -a -o "ROS 2 Bag"`  
+Verified with `ros2 bag info "ROS 2 Bag"`:
 * `/scan` : 3,354 LaserScan messages (270° environment range readings)
 * `/drive` : 3,365 AckermannDriveStamped messages (velocity & steering commands)
 * `/ego_racecar/odom` : 3,354 Odometry messages (poses, velocity, orientation)

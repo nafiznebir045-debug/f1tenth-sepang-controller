@@ -10,8 +10,8 @@ import subprocess
 import time
 import sys
 
-WORKSPACE_DIR = "/home/admin1/Downloads/nebirAssaignment-main"
-BAG_NAME = "ROS 2 Bag"
+WORKSPACE_DIR = os.path.abspath(os.path.dirname(__file__))
+BAG_NAME = sys.argv[1] if len(sys.argv) > 1 else "f1tenth_run_record"
 OUTPUT_BAG_PATH = os.path.join(WORKSPACE_DIR, BAG_NAME)
 
 env = os.environ.copy()

@@ -13,7 +13,7 @@ bridge:
     scan_distance_to_base_link: 0.0
     scan_fov: 4.7
     scan_beams: 1080
-    map_path: '/home/admin1/Documents/Final Project - Reactive Controller Competition in F1Tenth/src/f1tenth_gym_ros/maps/Sepang_obs_map'
+    map_path: '/home/admin1/Downloads/nebirAssaignment-main/src/f1tenth_gym_ros/maps/Sepang_obs_map'
     map_img_ext: '.png'
     num_agent: 1
     sx: 0.0

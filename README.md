@@ -156,26 +156,27 @@ The controller implements an integrated telemetry engine:
 ## 📁 Repository & Code Structure
 
 ```
-Final Project - Reactive Controller Competition in F1Tenth/
+f1tenth-sepang-controller/
 ├── README.md                               <- Complete GitHub Documentation & Tutorial
 ├── ORAL_DEFENSE_GUIDE.md                   <- Comprehensive Q&A for Oral Defense (x1.0 weighting)
 ├── SUBMISSION_SUMMARY.txt                  <- Ready-to-submit Canvas text and link summary
-├── SUBMISSION_SHORTCUT.desktop             <- Desktop launcher for instant verification & submission
 ├── runsim                                  <- Unified simulation runner (Challenges 1, 2 & Benchmark)
 ├── submit_project.sh                       <- Automatic submission packaging script
 ├── benchmark_10_laps.py                    <- 10-Lap verification engine for both challenges
+├── lap_times.csv                           <- Official 10-lap real-clock performance records
 ├── lap_times_static_obstacles.csv          <- Official 10-lap performance records (Challenge 1)
 ├── lap_times_dynamic_overtaking.csv        <- Official 10-lap performance records (Challenge 2)
-├── f1tenth_run_01/                         <- Official ROS 2 Bag dataset (24.0 MiB, 24,573 msgs)
+├── ROS 2 Bag/                              <- Official ROS 2 Bag dataset (24.0 MiB, 24,573 msgs)
 │   ├── f1tenth_run_01_0.db3                <- SQLite3 binary database
-│   └── metadata.yaml                       <- Topics, schemas, and message counts
+│   ├── metadata.yaml                       <- Topics, schemas, and message counts
+│   ├── lap_times.csv                       <- Exported verified lap times
+│   └── README.md                           <- Playback & inspection commands
 ├── videos/
 │   └── Sepang_10_Laps_Demonstration.webm   <- HD 1080p full run video with visible HUD & timer
 └── src/
     ├── f1tenth_gym_ros/
     │   ├── config/
     │   │   ├── sim.yaml                    <- Active simulation parameters
-    │   │   ├── sim_static_obstacles.yaml   <- Challenge 1 configuration
     │   │   └── sim_dynamic_overtaking.yaml <- Challenge 2 configuration
     │   └── maps/
     │       ├── Sepang_map.png              <- Clean official Sepang map
@@ -202,7 +203,7 @@ Final Project - Reactive Controller Competition in F1Tenth/
 
 ### 2. Run with One-Click Script
 ```bash
-cd "/home/admin1/Documents/Final Project - Reactive Controller Competition in F1Tenth"
+cd ~/Downloads/nebirAssaignment-main  # or git clone https://github.com/nafiznebir045-debug/f1tenth-sepang-controller.git
 ./runsim
 ```
 Select an option:
@@ -210,7 +211,7 @@ Select an option:
 * `2` : Challenge 2 (Dynamic Obstacle Challenge - Robot Overtaking)
 * `3` : Fast Headless Benchmark (Challenge 1 - 10 Laps)
 * `4` : Fast Headless Benchmark (Challenge 2 - 10 Laps)
-* `5` : Record ROS 2 Bag (`f1tenth_run_01`)
+* `5` : Record ROS 2 Bag (`ROS 2 Bag`)
 * `6` : Play Recorded ROS 2 Bag
 
 ### 3. Run Benchmark Verification via CLI

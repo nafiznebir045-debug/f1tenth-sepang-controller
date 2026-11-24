@@ -20,11 +20,11 @@ YouTube URL : https://youtu.be/0211XUaUX8s
 Local File  : videos/Sepang_10_Laps_Demonstration.webm
 
 ROS 2 Bag File:
-Folder Name : f1tenth_run_01/
+Folder Name : ROS 2 Bag/
 Storage     : SQLite3 binary (f1tenth_run_01_0.db3, metadata.yaml)
 Topics      : /scan, /drive, /ego_racecar/odom, /tf, /lap_info, /lap_marker
-Verification: ros2 bag info f1tenth_run_01
-Replay      : ros2 bag play f1tenth_run_01
+Verification: ros2 bag info "ROS 2 Bag"
+Replay      : ros2 bag play "ROS 2 Bag"
 
 --------------------------------------------------------------------------------
 2. COMPETITION CHALLENGES SUMMARY
