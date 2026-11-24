@@ -77,11 +77,10 @@ case "$CHOICE" in
         sed -i "s|map_path:.*|map_path: '$SCRIPT_DIR/src/f1tenth_gym_ros/maps/Sepang_obs_map'|g" "$SCRIPT_DIR/src/f1tenth_gym_ros/config/sim.yaml"
         sed -i "s|num_agent:.*|num_agent: 1|g" "$SCRIPT_DIR/src/f1tenth_gym_ros/config/sim.yaml"
 
-        # Copy to ros2_ws and build
-        cp "$SCRIPT_DIR/src/f1tenth_gym_ros/config/sim.yaml" /home/admin1/ros2_ws/src/F1Tenth-Repository/src/f1tenth_gym_ros/config/sim.yaml
-        cd /home/admin1/ros2_ws
+        # Build in this workspace
+        cd "$SCRIPT_DIR"
         colcon build --packages-select f1tenth_gym_ros controllers
-        source /home/admin1/ros2_ws/install/setup.bash
+        source "$SCRIPT_DIR/install/setup.bash"
 
         echo -e "\033[1;32m[*] Starting F1TENTH Simulator bridge...\033[0m"
         ros2 launch f1tenth_gym_ros gym_bridge_launch.py > /tmp/f1tenth_sim.log 2>&1 &
@@ -99,10 +98,10 @@ case "$CHOICE" in
         sed -i "s|map_path:.*|map_path: '$SCRIPT_DIR/src/f1tenth_gym_ros/maps/Sepang_map'|g" "$SCRIPT_DIR/src/f1tenth_gym_ros/config/sim.yaml"
         sed -i "s|num_agent:.*|num_agent: 2|g" "$SCRIPT_DIR/src/f1tenth_gym_ros/config/sim.yaml"
 
-        cp "$SCRIPT_DIR/src/f1tenth_gym_ros/config/sim.yaml" /home/admin1/ros2_ws/src/F1Tenth-Repository/src/f1tenth_gym_ros/config/sim.yaml
-        cd /home/admin1/ros2_ws
+        # Build in this workspace
+        cd "$SCRIPT_DIR"
         colcon build --packages-select f1tenth_gym_ros controllers
-        source /home/admin1/ros2_ws/install/setup.bash
+        source "$SCRIPT_DIR/install/setup.bash"
 
         echo -e "\033[1;32m[*] Starting F1TENTH Simulator bridge (2 agents)...\033[0m"
         ros2 launch f1tenth_gym_ros gym_bridge_launch.py > /tmp/f1tenth_sim.log 2>&1 &
@@ -132,17 +131,17 @@ case "$CHOICE" in
         ;;
 
     5)
-        echo -e "\n\033[1;34m[*] Recording ROS 2 Bag (f1tenth_run_01)...\033[0m"
+        echo -e "\n\033[1;34m[*] Recording ROS 2 Bag (ROS 2 Bag)...\033[0m"
         cd "$SCRIPT_DIR"
         source /opt/ros/humble/setup.bash
-        rm -rf "$SCRIPT_DIR/f1tenth_run_01_recorded"
-        ros2 bag record -a -o f1tenth_run_01_recorded
+        rm -rf "$SCRIPT_DIR/ROS 2 Bag_new"
+        ros2 bag record -a -o "ROS 2 Bag_new"
         ;;
 
     6)
-        echo -e "\n\033[1;34m[*] Playing recorded ROS 2 Bag (f1tenth_run_01)...\033[0m"
+        echo -e "\n\033[1;34m[*] Playing recorded ROS 2 Bag (ROS 2 Bag)...\033[0m"
         source /opt/ros/humble/setup.bash
-        ros2 bag play "$SCRIPT_DIR/f1tenth_run_01"
+        ros2 bag play "$SCRIPT_DIR/ROS 2 Bag"
         ;;
 
     *)
